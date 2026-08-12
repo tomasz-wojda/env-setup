@@ -51,14 +51,50 @@ resolve_groovy_home() {
   GROOVY_HOME="$path"
 }
 
+format_groovy_runtime() {
+  local line="$1"
+  local formatted
+  formatted="$(printf '%s' "$line" | sed -n 's/.*Groovy Version: \([^ ]*\) JVM: \([^ ]*\).*/Groovy \1 · JVM \2/p')"
+  if [[ -n "$formatted" ]]; then
+    printf '%s' "$formatted"
+  else
+    printf '%s' "$line"
+  fi
+}
+
+extract_run_error() {
+  local out="$1"
+  local msg
+
+  msg="$(printf '%s\n' "$out" | grep -oE 'Unsupported class file major version [0-9]+' | head -1)"
+  if [[ -n "$msg" ]]; then
+    printf '%s' "$msg"
+    return 0
+  fi
+
+  msg="$(printf '%s\n' "$out" | sed -n 's/^Caught: //p' | head -1)"
+  if [[ -n "$msg" ]]; then
+    printf '%s' "$msg"
+    return 0
+  fi
+
+  msg="$(printf '%s\n' "$out" | sed -n 's/^Caused by: //p' | head -1)"
+  if [[ -n "$msg" ]]; then
+    printf '%s' "$msg"
+    return 0
+  fi
+
+  printf '%s\n' "$out" | grep -v '^[[:space:]]*at ' | grep -v '^$' | head -1
+}
+
 test_jdk() {
   local jdk_id="$1"
   local jhome="$JAVA_ROOT/$jdk_id"
   local major="${jdk_id#openjdk-}"
-  local tmp ver_ok=0 run_ok=0 out
+  local tmp ver_out run_out runtime error
 
   if [[ ! -x "$jhome/bin/java" || ! -d "$jhome/lib" ]]; then
-    echo "=== JDK $major === SKIP (not installed at $jhome)"
+    printf "  %-3s   %-4s   %s\n" "$major" "SKIP" "not installed"
     SKIPPED=$((SKIPPED + 1))
     return 0
   fi
@@ -66,39 +102,28 @@ test_jdk() {
   tmp="$(mktemp "${TMPDIR:-/tmp}/groovy-jdk-test.XXXXXX.groovy")"
   printf '%s\n' 'println "ok"' 'println System.getProperty("java.version")' > "$tmp"
 
-  echo "=== JDK $major ==="
-
-  if out="$(JAVA_HOME="$jhome" GROOVY_HOME="$GROOVY_HOME" "$GROOVY_HOME/bin/groovy" -v 2>&1)"; then
-    echo "groovy -v: $out"
-    ver_ok=1
-  else
-    echo "groovy -v: FAIL"
-    echo "$out"
+  if ! ver_out="$(JAVA_HOME="$jhome" GROOVY_HOME="$GROOVY_HOME" "$GROOVY_HOME/bin/groovy" -v 2>&1)"; then
+    error="$(extract_run_error "$ver_out")"
+    printf "  %-3s   %-4s   %s\n" "$major" "FAIL" "groovy -v failed"
+    printf "                  └ %s\n" "$error"
+    rm -f "$tmp"
+    FAILURES=$((FAILURES + 1))
+    return 0
   fi
 
-  if out="$(JAVA_HOME="$jhome" GROOVY_HOME="$GROOVY_HOME" "$GROOVY_HOME/bin/groovy" "$tmp" 2>&1)"; then
-    echo "groovy run:"
-    while IFS= read -r line; do
-      echo "  $line"
-    done <<< "$out"
-    run_ok=1
+  runtime="$(format_groovy_runtime "$ver_out")"
+
+  if run_out="$(JAVA_HOME="$jhome" GROOVY_HOME="$GROOVY_HOME" "$GROOVY_HOME/bin/groovy" "$tmp" 2>&1)"; then
+    printf "  %-3s   %-4s   %s\n" "$major" "OK" "$runtime"
+    PASSED=$((PASSED + 1))
   else
-    echo "groovy run: FAIL"
-    echo "$out" | head -8
+    error="$(extract_run_error "$run_out")"
+    printf "  %-3s   %-4s   %s\n" "$major" "FAIL" "$runtime"
+    printf "                  └ %s\n" "$error"
+    FAILURES=$((FAILURES + 1))
   fi
 
   rm -f "$tmp"
-
-  if [[ "$run_ok" == 1 ]]; then
-    PASSED=$((PASSED + 1))
-  else
-    FAILURES=$((FAILURES + 1))
-    if [[ "$ver_ok" == 1 ]]; then
-      echo "note: groovy -v passed but running a script failed"
-    fi
-  fi
-
-  echo ""
 }
 
 [[ $# -eq 1 && "$1" != "-h" && "$1" != "--help" ]] || {
@@ -108,15 +133,18 @@ test_jdk() {
 
 resolve_groovy_home "$1"
 
-echo "Groovy: $GROOVY_HOME"
-echo "Java root: $JAVA_ROOT"
+echo "Groovy: $(basename "$GROOVY_HOME") @ $GROOVY_HOME"
+echo "Java:   $JAVA_ROOT"
 echo ""
+printf "  %-3s   %-4s   %s\n" "JDK" "TEST" "RUNTIME"
+printf "  %-3s   %-4s   %s\n" "---" "----" "-------"
 
 for jdk_id in $JAVA_IDS; do
   test_jdk "$jdk_id"
 done
 
-echo "Passed: $PASSED  Failed: $FAILURES  Skipped: $SKIPPED"
+echo ""
+echo "$PASSED passed · $FAILURES failed · $SKIPPED skipped"
 
 if [[ "$FAILURES" -gt 0 ]]; then
   exit 1
