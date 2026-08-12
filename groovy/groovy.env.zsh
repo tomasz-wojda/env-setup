@@ -139,6 +139,8 @@ switchGroovy() {
   groovy -v
 }
 
+unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java26 2>/dev/null
+
 groovy3() { switchGroovy "$GROOVY_VERSION_3"; }
 groovy4() { switchGroovy "$GROOVY_VERSION_4"; }
 groovy5() { switchGroovy "$GROOVY_VERSION_5"; }
