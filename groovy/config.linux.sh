@@ -1,0 +1,1 @@
+JAVA_INSTALL_BACKEND="adoptium"
