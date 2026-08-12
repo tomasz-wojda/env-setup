@@ -77,10 +77,10 @@ switchGroovy() {
   groovy -v
 }
 
-alias groovy3='switchGroovy ${GROOVY_VERSION_3}'
-alias groovy4='switchGroovy ${GROOVY_VERSION_4}'
-alias groovy5='switchGroovy ${GROOVY_VERSION_5}'
-alias groovy6='switchGroovy ${GROOVY_VERSION_6}'
+groovy3() { switchGroovy "$GROOVY_VERSION_3"; }
+groovy4() { switchGroovy "$GROOVY_VERSION_4"; }
+groovy5() { switchGroovy "$GROOVY_VERSION_5"; }
+groovy6() { switchGroovy "$GROOVY_VERSION_6"; }
 
 default_var="GROOVY_VERSION_${GROOVY_DEFAULT_MAJOR}"
 switchGroovy ${(P)default_var}
