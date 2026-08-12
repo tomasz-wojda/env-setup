@@ -1,0 +1,4 @@
+ZSHRC_HOOK_BEGIN="# >>> env-setup >>>"
+ZSHRC_HOOK_END="# <<< env-setup <<<"
+ZSHRC_HOOK_LEGACY_BEGIN="# >>> env-setup groovy >>>"
+ZSHRC_HOOK_LEGACY_END="# <<< env-setup groovy <<<"

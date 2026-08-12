@@ -282,28 +282,6 @@ update_groovy_major() {
   log_info "Run: groovy$major or source ~/.zshrc"
 }
 
-ensure_zshrc_hook() {
-  local env_file="$GROOVY_SCRIPT_DIR/groovy.env.zsh"
-  local zshrc="${HOME}/.zshrc"
-  if [[ ! -f "$zshrc" ]]; then
-    touch "$zshrc"
-  fi
-  if grep -qF "$ZSHRC_HOOK_BEGIN" "$zshrc" 2>/dev/null; then
-    log_info "~/.zshrc hook already present"
-    return 0
-  fi
-  {
-    echo ""
-    echo "$ZSHRC_HOOK_BEGIN"
-    echo "source \"$env_file\""
-    echo "$ZSHRC_HOOK_END"
-  } >> "$zshrc"
-  log_info "Added env-setup hook to ~/.zshrc"
-  if grep -qE 'openjdk(@[0-9]+)?/bin' "$zshrc" 2>/dev/null; then
-    log_warn "Consider removing bare openjdk PATH lines from ~/.zshrc (now managed by switchGroovy/switchJava)"
-  fi
-}
-
 show_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]

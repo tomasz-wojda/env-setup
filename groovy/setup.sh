@@ -49,7 +49,7 @@ write_versions_conf
 default_ver="$(version_for_major "$GROOVY_DEFAULT_MAJOR")"
 set_current_groovy "$default_ver"
 
-ensure_zshrc_hook
+"$GROOVY_SCRIPT_DIR/../shell/setup.sh"
 
 log_info "Setup complete."
 log_info "Installed Groovy majors: $GROOVY_INITIAL_MAJORS"
