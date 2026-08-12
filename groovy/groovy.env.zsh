@@ -25,6 +25,7 @@ _ensure_jdk_link() {
 
   case "$jdk_id" in
     openjdk-17) pkg="openjdk@17" ;;
+    openjdk-21) pkg="openjdk@21" ;;
     openjdk-25) pkg="openjdk@25" ;;
     openjdk-26) pkg="openjdk" ;;
     *) return 1 ;;

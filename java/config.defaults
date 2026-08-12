@@ -1,4 +1,4 @@
 JAVA_ROOT="/opt/java"
-JAVA_IDS="openjdk-17 openjdk-25 openjdk-26"
-JAVA_INITIAL_MAJORS="17 25 26"
+JAVA_IDS="openjdk-17 openjdk-21 openjdk-25 openjdk-26"
+JAVA_INITIAL_MAJORS="17 21 25 26"
 JAVA_DEFAULT_MAJOR="26"

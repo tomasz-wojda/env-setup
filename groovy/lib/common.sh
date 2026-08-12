@@ -316,7 +316,7 @@ Bootstrap JDK multi-version environment under /opt/java.
 
 Options:
   -h, --help       Show this help and exit
-      --major N    Limit install to JDK major N (17, 25, or 26)
+      --major N    Limit install to JDK major N (17, 21, 25, or 26)
       --verbose    Enable debug logging
 
 Examples:
@@ -338,7 +338,7 @@ Verify JDK installations under /opt/java.
 
 Options:
   -h, --help       Show this help and exit
-      --major N    Limit checks to JDK major N (17, 25, or 26)
+      --major N    Limit checks to JDK major N (17, 21, 25, or 26)
       --verbose    Enable debug logging
 
 Related:
@@ -387,14 +387,14 @@ EOF
 
 show_update_java_help() {
   cat << 'EOF'
-Usage: update-java.sh [17|25|26] [options]
+Usage: update-java.sh [17|21|25|26] [options]
        update-java.sh --all [options]
        update-java.sh --help
 
 Upgrade JDK installations under /opt/java.
 
 Arguments:
-  17|25|26            JDK major to upgrade (maps to openjdk-17 / openjdk-25 / openjdk-26)
+  17|21|25|26         JDK major to upgrade (maps to openjdk-17 / openjdk-21 / openjdk-25 / openjdk-26)
 
 Options:
   -h, --help           Show this help and exit
@@ -412,7 +412,7 @@ Examples:
 Related:
   ./setup.sh --help
   ../groovy/setup.sh --help
-  Re-run java17, java25, or java26 after JDK upgrade
+  Re-run java17, java21, java25, or java26 after JDK upgrade
 EOF
 }
 

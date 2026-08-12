@@ -92,6 +92,7 @@ jdk_brew_package() {
   local jdk_id="$1"
   case "$jdk_id" in
     openjdk-17) echo "openjdk@17" ;;
+    openjdk-21) echo "openjdk@21" ;;
     openjdk-25) echo "openjdk@25" ;;
     openjdk-26) echo "openjdk" ;;
     *) die_usage "Unknown JDK id: $jdk_id" ;;
