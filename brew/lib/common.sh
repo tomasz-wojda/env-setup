@@ -204,7 +204,7 @@ EOF
 
 show_verify_brew_help() {
   cat << 'EOF'
-Usage: verify-brew.sh [options]
+Usage: verify.sh [options]
 
 Verify Homebrew and configured formulae are installed.
 

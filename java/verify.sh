@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GROOVY_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/common.sh
+JAVA_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GROOVY_SCRIPT_DIR="$(cd "$JAVA_SCRIPT_DIR/../groovy" && pwd)"
+# shellcheck source=../groovy/lib/common.sh
 source "$GROOVY_SCRIPT_DIR/lib/common.sh"
 init_common
 load_config
@@ -38,45 +39,24 @@ check_dir() { [[ -d "$1" ]]; }
 check_file() { [[ -f "$1" ]]; }
 check_link() { [[ -L "$1" ]] && [[ -e "$1" ]]; }
 
-check "GROOVY_ROOT exists" check_dir "$GROOVY_ROOT"
 check "JAVA_ROOT exists" check_dir "$JAVA_ROOT"
-check "versions.conf exists" check_file "$GROOVY_SCRIPT_DIR/versions.conf"
+check "java-versions.conf exists" check_file "$JAVA_SCRIPT_DIR/java-versions.conf"
 
-majors="$GROOVY_INITIAL_MAJORS"
+majors="$JAVA_INITIAL_MAJORS"
 [[ -n "$MAJOR_FILTER" ]] && majors="$MAJOR_FILTER"
 
 for major in $majors; do
-  ver="$(version_for_major "$major")"
-  home="$(groovy_dir_for_version "$ver")"
-  if is_valid_groovy_home "$home"; then
-    log_info "OK: Groovy $major at $home"
-  else
-    log_error "FAIL: Groovy $major at $home"
-    FAILURES=$((FAILURES + 1))
-  fi
-  jdk_id="$(jdk_id_for_major "$major")"
+  jdk_id="openjdk-$major"
   jhome="$(java_home_for_id "$jdk_id")"
   if is_valid_java_home "$jhome"; then
-    log_info "OK: JDK for major $major at $jhome"
+    log_info "OK: $jdk_id at $jhome"
   else
-    log_error "FAIL: JDK for major $major at $jhome"
+    log_error "FAIL: $jdk_id at $jhome"
     FAILURES=$((FAILURES + 1))
   fi
 done
 
-check "groovy/current symlink" check_link "$GROOVY_ROOT/current"
 check "java/current symlink" check_link "$JAVA_ROOT/current"
-
-if [[ -L "$GROOVY_ROOT/current" ]]; then
-  gh="$(cd "$GROOVY_ROOT/current" && pwd -P)"
-  jh="$(java_home_for_id "$(jdk_id_for_major "${GROOVY_DEFAULT_MAJOR}")")"
-  if is_valid_groovy_home "$gh" 2>/dev/null && is_valid_java_home "$jh" && JAVA_HOME="$jh" GROOVY_HOME="$gh" "$gh/bin/groovy" -v >/dev/null 2>&1; then
-    log_info "OK: groovy -v via current ($("$gh/bin/groovy" -v 2>&1 | head -1))"
-  else
-    log_error "FAIL: groovy -v via current"
-    FAILURES=$((FAILURES + 1))
-  fi
-fi
 
 if [[ -L "$JAVA_ROOT/current" ]]; then
   jh="$(cd "$JAVA_ROOT/current" && pwd -P)"

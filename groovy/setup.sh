@@ -31,10 +31,7 @@ if [[ -n "$MAJOR_FILTER" ]]; then
 fi
 
 if [[ "$SKIP_JDK" != "1" ]]; then
-  ensure_jdk openjdk-17
-  ensure_jdk openjdk-25
-  set_current_java openjdk-25
-  write_java_versions_conf
+  "$GROOVY_SCRIPT_DIR/../java/setup.sh"
 fi
 
 for major in $majors; do
@@ -57,4 +54,4 @@ ensure_zshrc_hook
 log_info "Setup complete."
 log_info "Installed Groovy majors: $GROOVY_INITIAL_MAJORS"
 log_info "Active: Groovy $GROOVY_DEFAULT_MAJOR ($default_ver)"
-log_info "Next: source ~/.zshrc && ./verify.sh && groovy6"
+log_info "Next: source ~/.zshrc && ../java/verify.sh && ./verify.sh && groovy6"

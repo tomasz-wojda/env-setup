@@ -299,8 +299,8 @@ ensure_zshrc_hook() {
     echo "$ZSHRC_HOOK_END"
   } >> "$zshrc"
   log_info "Added env-setup hook to ~/.zshrc"
-  if grep -q 'openjdk@25/bin' "$zshrc" 2>/dev/null; then
-    log_warn "Consider removing bare openjdk@25 PATH line from ~/.zshrc (now managed by switchGroovy)"
+  if grep -qE 'openjdk(@[0-9]+)?/bin' "$zshrc" 2>/dev/null; then
+    log_warn "Consider removing bare openjdk PATH lines from ~/.zshrc (now managed by switchGroovy/switchJava)"
   fi
 }
 
@@ -325,7 +325,47 @@ Examples:
 Related:
   ./update-groovy.sh --help
   ./verify.sh
+  ../java/setup.sh --help
   source ~/.zshrc && groovy6
+EOF
+}
+
+show_java_setup_help() {
+  cat << 'EOF'
+Usage: setup.sh [options]
+
+Bootstrap JDK multi-version environment under /opt/java.
+
+Options:
+  -h, --help       Show this help and exit
+      --major N    Limit install to JDK major N (17, 25, or 26)
+      --verbose    Enable debug logging
+
+Examples:
+  ./setup.sh
+  ./setup.sh --major 26
+
+Related:
+  ./verify.sh
+  ./update-java.sh --help
+  ../groovy/setup.sh --help
+EOF
+}
+
+show_java_verify_help() {
+  cat << 'EOF'
+Usage: verify.sh [options]
+
+Verify JDK installations under /opt/java.
+
+Options:
+  -h, --help       Show this help and exit
+      --major N    Limit checks to JDK major N (17, 25, or 26)
+      --verbose    Enable debug logging
+
+Related:
+  ./setup.sh --help
+  ../groovy/verify.sh
 EOF
 }
 
@@ -369,32 +409,32 @@ EOF
 
 show_update_java_help() {
   cat << 'EOF'
-Usage: update-java.sh [17|25] [options]
+Usage: update-java.sh [17|25|26] [options]
        update-java.sh --all [options]
        update-java.sh --help
 
 Upgrade JDK installations under /opt/java.
 
 Arguments:
-  17|25                JDK major to upgrade (maps to openjdk-17 / openjdk-25)
+  17|25|26            JDK major to upgrade (maps to openjdk-17 / openjdk-25 / openjdk-26)
 
 Options:
   -h, --help           Show this help and exit
-      --all            Upgrade both JDK 17 and 25
+      --all            Upgrade all configured JDK majors
       --dry-run        Show planned actions only
       --force          Force refresh even if version unchanged
       --verbose        Enable debug logging
 
 Examples:
-  ./update-java.sh 25
+  ./update-java.sh 26
   ./update-java.sh 17
   ./update-java.sh --all
   ./update-java.sh 25 --dry-run
 
 Related:
+  ./setup.sh --help
   ../groovy/setup.sh --help
-  Re-run groovy3/groovy4 after JDK 17 upgrade
-  Re-run groovy5/groovy6 after JDK 25 upgrade
+  Re-run java17, java25, or java26 after JDK upgrade
 EOF
 }
 

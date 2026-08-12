@@ -28,6 +28,7 @@ while [[ $# -gt 0 ]]; do
     --verbose) ENV_SETUP_VERBOSE=1; shift ;;
     17) JDK_ARG="openjdk-17"; shift ;;
     25) JDK_ARG="openjdk-25"; shift ;;
+    26) JDK_ARG="openjdk-26"; shift ;;
     *) die_usage "Unknown option: $1 (try --help)" ;;
   esac
 done
@@ -39,6 +40,6 @@ if [[ "$DO_ALL" == "1" ]]; then
   exit 0
 fi
 
-[[ -n "$JDK_ARG" ]] || die_usage "JDK major required (17 or 25) unless using --all"
+[[ -n "$JDK_ARG" ]] || die_usage "JDK major required (17, 25, or 26) unless using --all"
 
 update_jdk "$JDK_ARG" "$FORCE" "$DRY_RUN"
