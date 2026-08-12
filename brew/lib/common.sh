@@ -92,6 +92,31 @@ ensure_formulae() {
   done
 }
 
+cask_installed() {
+  local cask="$1"
+  brew list --cask "$cask" >/dev/null 2>&1
+}
+
+ensure_cask() {
+  local cask="$1"
+  local force="${2:-0}"
+  if cask_installed "$cask" && [[ "$force" != "1" ]]; then
+    log_info "$cask already installed"
+    return 0
+  fi
+  log_info "Installing $cask..."
+  brew install --cask "$cask" || die_install "brew install --cask $cask failed"
+  log_info "$cask installed"
+}
+
+ensure_casks() {
+  local force="${1:-0}"
+  local cask
+  for cask in $BREW_CASKS; do
+    ensure_cask "$cask" "$force"
+  done
+}
+
 update_formulae() {
   local dry_run="${1:-0}"
   if [[ "$dry_run" == "1" ]]; then
@@ -109,6 +134,31 @@ update_formulae() {
       ensure_formula "$formula" 0
     fi
   done
+}
+
+update_casks() {
+  local dry_run="${1:-0}"
+  if [[ "$dry_run" == "1" ]]; then
+    log_info "[dry-run] would run brew update and brew upgrade --cask for: $BREW_CASKS"
+    return 0
+  fi
+  log_info "Running brew update..."
+  brew update || log_warn "brew update failed (continuing)"
+  local cask
+  for cask in $BREW_CASKS; do
+    if cask_installed "$cask"; then
+      log_info "Upgrading $cask..."
+      brew upgrade --cask "$cask" 2>/dev/null || log_info "$cask already at latest"
+    else
+      ensure_cask "$cask" 0
+    fi
+  done
+}
+
+update_brew_packages() {
+  local dry_run="${1:-0}"
+  update_formulae "$dry_run"
+  update_casks "$dry_run"
 }
 
 verify_formulae() {
@@ -136,6 +186,34 @@ verify_formulae() {
   if [[ "$failures" -gt 0 ]]; then
     die_validate "$failures configured formula(e) missing"
   fi
+}
+
+verify_casks() {
+  local failures=0
+  local cask
+  for cask in $BREW_CASKS; do
+    if cask_installed "$cask"; then
+      log_info "OK: $cask installed"
+    else
+      log_error "FAIL: $cask not installed"
+      failures=$((failures + 1))
+    fi
+  done
+  local outdated
+  outdated="$(brew outdated --cask 2>/dev/null | tr '\n' ' ')"
+  if [[ -n "$outdated" ]]; then
+    log_warn "Outdated casks: $outdated"
+  elif [[ -n "$BREW_CASKS" ]]; then
+    log_info "OK: configured casks up to date"
+  fi
+  if [[ "$failures" -gt 0 ]]; then
+    die_validate "$failures configured cask(s) missing"
+  fi
+}
+
+verify_brew_packages() {
+  verify_formulae
+  verify_casks
   log_info "All brew checks passed."
 }
 
@@ -163,15 +241,16 @@ show_brew_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Install configured Homebrew formulae (tree, gh, etc.).
+Install configured Homebrew formulae and casks (tree, gh, nimble-commander, etc.).
 
 Options:
   -h, --help           Show this help and exit
       --with-homebrew  Install Homebrew first if missing (default)
       --skip-homebrew  Skip Homebrew install check
       --package NAME   Install one additional formula
-      --list           Print configured formulae and exit
-      --force          Reinstall configured formulae
+      --cask NAME      Install one additional cask
+      --list           Print configured formulae and casks and exit
+      --force          Reinstall configured formulae and casks
       --verbose        Enable debug logging
 
 Examples:
@@ -189,7 +268,7 @@ show_update_brew_help() {
   cat << 'EOF'
 Usage: update-brew.sh [options]
 
-Run brew update and upgrade configured formulae.
+Run brew update and upgrade configured formulae and casks.
 
 Options:
   -h, --help       Show this help and exit
@@ -206,7 +285,7 @@ show_verify_brew_help() {
   cat << 'EOF'
 Usage: verify.sh [options]
 
-Verify Homebrew and configured formulae are installed.
+Verify Homebrew and configured formulae and casks are installed.
 
 Options:
   -h, --help       Show this help and exit

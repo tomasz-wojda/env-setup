@@ -20,4 +20,4 @@ done
 
 preflight_brew
 ensure_brew_in_path || die_preflight "Homebrew not available"
-update_formulae "$DRY_RUN"
+update_brew_packages "$DRY_RUN"

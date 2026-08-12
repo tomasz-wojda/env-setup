@@ -18,4 +18,4 @@ done
 
 preflight_brew
 ensure_brew_in_path || die_preflight "Homebrew not available"
-verify_formulae
+verify_brew_packages
