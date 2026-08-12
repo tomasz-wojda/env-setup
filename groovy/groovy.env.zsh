@@ -77,6 +77,23 @@ _highest_groovy_major_for_jdk() {
   print -r -- "$result"
 }
 
+_java_version_short() {
+  local home="$1"
+  "$home/bin/java" -version 2>&1 | head -1 | sed -E 's/.*version "([^"]+)".*/\1/'
+}
+
+_print_env_conjuring() {
+  local groovy_version="$1"
+  local java_version
+  java_version="$(_java_version_short "$JAVA_HOME")"
+  print -r -- ">>> Conjuring env-setup: Groovy ${groovy_version} · JDK ${java_version}"
+  if [[ "${ENV_SETUP_VERBOSE:-0}" == "1" ]]; then
+    print -r -- "JAVA_HOME=$JAVA_HOME"
+    print -r -- "GROOVY_HOME=$GROOVY_HOME"
+    groovy -v
+  fi
+}
+
 switchJava() {
   local jdk_id="$1"
   local home="$JAVA_ROOT/$jdk_id"
@@ -105,8 +122,6 @@ switchGroovy() {
   local target="$GROOVY_ROOT/groovy-$version"
   local major="${version%%.*}"
 
-  echo "switching to groovy: $1"
-
   if [[ ! -d "$target" ]]; then
     print -u2 "ERROR: Groovy not found at $target"
     return 1
@@ -134,9 +149,7 @@ switchGroovy() {
 
   _refresh_groovy_path
 
-  echo "JAVA_HOME=$JAVA_HOME"
-  echo "GROOVY_HOME=$GROOVY_HOME"
-  groovy -v
+  _print_env_conjuring "$version"
 }
 
 unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java26 2>/dev/null
