@@ -16,6 +16,29 @@ fi
 
 typeset -a _groovy_path_reply
 
+_ensure_jdk_link() {
+  local jdk_id="$1"
+  local home="$JAVA_ROOT/$jdk_id"
+  local pkg src
+
+  [[ -x "$home/bin/java" && -d "$home/lib" ]] && return 0
+
+  case "$jdk_id" in
+    openjdk-17) pkg="openjdk@17" ;;
+    openjdk-25) pkg="openjdk@25" ;;
+    openjdk-26) pkg="openjdk" ;;
+    *) return 1 ;;
+  esac
+
+  command -v brew >/dev/null 2>&1 || return 1
+  brew list "$pkg" >/dev/null 2>&1 || return 1
+
+  src="$(brew --prefix "$pkg")/libexec/openjdk.jdk/Contents/Home"
+  [[ -x "$src/bin/java" && -d "$src/lib" ]] || return 1
+
+  ln -sfn "$src" "$home"
+}
+
 _refresh_groovy_path() {
   local p
   _groovy_path_reply=()
@@ -24,6 +47,8 @@ _refresh_groovy_path() {
     [[ "$p" == "$JAVA_ROOT"/*/bin ]] && continue
     [[ "$p" == "$GROOVY_ROOT"/groovy-*/bin ]] && continue
     [[ "$p" == "$GROOVY_ROOT"/current/bin ]] && continue
+    [[ "$p" == /opt/homebrew/opt/openjdk@*/bin ]] && continue
+    [[ "$p" == /opt/homebrew/opt/openjdk/bin ]] && continue
     _groovy_path_reply+=("$p")
   done
   path=("$JAVA_HOME/bin" "$GROOVY_HOME/bin" "${_groovy_path_reply[@]}")
@@ -58,6 +83,10 @@ switchJava() {
   local major ver_param
 
   if [[ ! -x "$home/bin/java" || ! -d "$home/lib" ]]; then
+    _ensure_jdk_link "$jdk_id"
+  fi
+
+  if [[ ! -x "$home/bin/java" || ! -d "$home/lib" ]]; then
     print -u2 "ERROR: JDK not found at $home"
     return 1
   fi
@@ -87,6 +116,7 @@ switchGroovy() {
   ln -sfn "$target" "$GROOVY_ROOT/current"
 
   local jdk_id="$(_groovy_jdk_id_for_major "$major")"
+  _ensure_jdk_link "$jdk_id"
   export JAVA_HOME="$JAVA_ROOT/$jdk_id"
   export GROOVY_HOME="$GROOVY_ROOT/current"
 
