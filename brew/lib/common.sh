@@ -161,6 +161,26 @@ update_brew_packages() {
   update_casks "$dry_run"
 }
 
+configured_outdated_formulae() {
+  local formula outdated=""
+  for formula in $BREW_FORMULAE; do
+    if formula_installed "$formula" && brew outdated --formula "$formula" 2>/dev/null | grep -q .; then
+      outdated="${outdated}${formula} "
+    fi
+  done
+  echo "$outdated"
+}
+
+configured_outdated_casks() {
+  local cask outdated=""
+  for cask in $BREW_CASKS; do
+    if cask_installed "$cask" && brew outdated --cask "$cask" 2>/dev/null | grep -q .; then
+      outdated="${outdated}${cask} "
+    fi
+  done
+  echo "$outdated"
+}
+
 verify_formulae() {
   local failures=0
   local formula
@@ -177,7 +197,7 @@ verify_formulae() {
     fi
   done
   local outdated
-  outdated="$(brew outdated --formula 2>/dev/null | tr '\n' ' ')"
+  outdated="$(configured_outdated_formulae)"
   if [[ -n "$outdated" ]]; then
     log_warn "Outdated formulae: $outdated"
   else
@@ -200,7 +220,7 @@ verify_casks() {
     fi
   done
   local outdated
-  outdated="$(brew outdated --cask 2>/dev/null | tr '\n' ' ')"
+  outdated="$(configured_outdated_casks)"
   if [[ -n "$outdated" ]]; then
     log_warn "Outdated casks: $outdated"
   elif [[ -n "$BREW_CASKS" ]]; then
