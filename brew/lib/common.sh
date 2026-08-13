@@ -241,7 +241,7 @@ show_brew_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Install configured Homebrew formulae and casks (tree, gh, awscli@2, kubectl, python3, nimble-commander, etc.).
+Install configured Homebrew formulae and casks (tree, gh, awscli@2, kubectl, python3, argocd, nimble-commander, etc.).
 
 Options:
   -h, --help           Show this help and exit
