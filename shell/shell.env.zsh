@@ -1,4 +1,6 @@
-unalias gcam 2>/dev/null
+unalias gcam ssh 2>/dev/null
+
+alias ssh='TERM=xterm ssh'
 
 gcam() {
   local dry_run=0
