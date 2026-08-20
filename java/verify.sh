@@ -40,7 +40,7 @@ check_file() { [[ -f "$1" ]]; }
 check_link() { [[ -L "$1" ]] && [[ -e "$1" ]]; }
 
 check "JAVA_ROOT exists" check_dir "$JAVA_ROOT"
-check "java-versions.conf exists" check_file "$JAVA_SCRIPT_DIR/java-versions.conf"
+check "versions.conf exists" check_file "$JAVA_SCRIPT_DIR/versions.conf"
 
 majors="$JAVA_INITIAL_MAJORS"
 [[ -n "$MAJOR_FILTER" ]] && majors="$MAJOR_FILTER"

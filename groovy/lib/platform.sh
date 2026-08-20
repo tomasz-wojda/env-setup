@@ -219,9 +219,9 @@ set_current_java() {
 write_java_versions_conf() {
   local conf
   if [[ -n "${JAVA_SCRIPT_DIR:-}" ]]; then
-    conf="$JAVA_SCRIPT_DIR/java-versions.conf"
+    conf="$JAVA_SCRIPT_DIR/versions.conf"
   else
-    conf="$GROOVY_SCRIPT_DIR/../java/java-versions.conf"
+    conf="$GROOVY_SCRIPT_DIR/../java/versions.conf"
   fi
   local tmp="${conf}.tmp.$$"
   {
