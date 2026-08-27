@@ -2,6 +2,7 @@ unalias gcam ssh ls 2>/dev/null
 
 alias ls='ls -la'
 alias ssh='TERM=xterm ssh'
+alias gss='git status --short'
 
 gcam() {
   local dry_run=0
