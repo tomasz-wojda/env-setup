@@ -19,6 +19,17 @@ log_info() {
   fi
 }
 
+log_info_shell_function_ok() {
+  local fn="$1"
+  if _env_setup_color_enabled; then
+    printf '[env-setup:groovy] \033[32mINFO OK:\033[0m ' >&2
+    printf '\033[38;5;208m%s\033[0m' "$fn" >&2
+    printf ' loads as zsh function\n' >&2
+  else
+    echo "[env-setup:groovy] INFO OK: $fn loads as zsh function" >&2
+  fi
+}
+
 log_warn() {
   echo "[env-setup:groovy] WARN $*" >&2
 }
@@ -33,6 +44,17 @@ log_error() {
     fi
   else
     echo "[env-setup:groovy] ERROR $msg" >&2
+  fi
+}
+
+log_error_shell_function_fail() {
+  local fn="$1"
+  if _env_setup_color_enabled; then
+    printf '[env-setup:groovy] \033[31mERROR FAIL:\033[0m ' >&2
+    printf '\033[38;5;208m%s\033[0m' "$fn" >&2
+    printf ' loads as zsh function\n' >&2
+  else
+    echo "[env-setup:groovy] ERROR FAIL: $fn loads as zsh function" >&2
   fi
 }
 

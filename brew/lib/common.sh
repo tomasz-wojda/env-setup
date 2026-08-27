@@ -190,9 +190,9 @@ verify_formulae() {
   log_info "Homebrew: $(brew --version | head -1)"
   for formula in $BREW_FORMULAE; do
     if formula_installed "$formula"; then
-      log_info "OK: $formula installed"
+      log_info_brew_item_ok "$formula"
     else
-      log_error "FAIL: $formula not installed"
+      log_error_brew_item_fail "$formula"
       failures=$((failures + 1))
     fi
   done
@@ -213,9 +213,9 @@ verify_casks() {
   local cask
   for cask in $BREW_CASKS; do
     if cask_installed "$cask"; then
-      log_info "OK: $cask installed"
+      log_info_brew_item_ok "$cask"
     else
-      log_error "FAIL: $cask not installed"
+      log_error_brew_item_fail "$cask"
       failures=$((failures + 1))
     fi
   done

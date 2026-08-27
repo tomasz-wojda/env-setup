@@ -42,8 +42,6 @@ else
   FAILURES=$((FAILURES + 1))
 fi
 
-SHELL_FUNCTIONS="ls ssh gss glo gcam"
-
 shell_function_check_output() {
   zsh -i -c "
     source \"$ENV_SETUP_ROOT/env-setup.env.zsh\" >/dev/null 2>&1
@@ -62,11 +60,11 @@ while IFS= read -r line; do
   case "$line" in
     ok:*)
       fn="${line#ok:}"
-      log_info "OK: $fn loads as zsh function"
+      log_info_shell_function_ok "$fn"
       ;;
     fail:*)
       fn="${line#fail:}"
-      log_error "FAIL: $fn loads as zsh function"
+      log_error_shell_function_fail "$fn"
       FAILURES=$((FAILURES + 1))
       ;;
   esac
