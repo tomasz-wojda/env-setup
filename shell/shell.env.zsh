@@ -1,9 +1,20 @@
-unalias gcam ssh ls 2>/dev/null
+unalias gcam ssh ls gss glo 2>/dev/null
 
-alias ls='ls -la'
-alias ssh='TERM=xterm ssh'
-alias gss='git status --short'
-alias glo='git log --oneline -10"
+ls() {
+  command ls -la "$@"
+}
+
+ssh() {
+  TERM=xterm command ssh "$@"
+}
+
+gss() {
+  git status --short "$@"
+}
+
+glo() {
+  git log --oneline -10 "$@"
+}
 
 gcam() {
   local dry_run=0

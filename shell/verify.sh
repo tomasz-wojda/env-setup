@@ -42,12 +42,37 @@ else
   FAILURES=$((FAILURES + 1))
 fi
 
-if zsh -i -c "source \"$ENV_SETUP_ROOT/env-setup.env.zsh\" >/dev/null 2>&1; whence -w gcam" 2>/dev/null | grep -q 'function'; then
-  log_info "OK: gcam loads as zsh function"
-else
-  log_error "FAIL: gcam loads as zsh function"
-  FAILURES=$((FAILURES + 1))
-fi
+SHELL_FUNCTIONS="ls ssh gss glo gcam"
+
+shell_function_check_output() {
+  zsh -i -c "
+    source \"$ENV_SETUP_ROOT/env-setup.env.zsh\" >/dev/null 2>&1
+    for fn in $SHELL_FUNCTIONS; do
+      if whence -w \"\$fn\" 2>/dev/null | grep -q function; then
+        print -r -- \"ok:\$fn\"
+      else
+        print -r -- \"fail:\$fn\"
+      fi
+    done
+  " 2>/dev/null
+}
+
+while IFS= read -r line; do
+  [[ -z "$line" ]] && continue
+  case "$line" in
+    ok:*)
+      fn="${line#ok:}"
+      log_info "OK: $fn loads as zsh function"
+      ;;
+    fail:*)
+      fn="${line#fail:}"
+      log_error "FAIL: $fn loads as zsh function"
+      FAILURES=$((FAILURES + 1))
+      ;;
+  esac
+done <<EOF
+$(shell_function_check_output)
+EOF
 
 if [[ "$FAILURES" -gt 0 ]]; then
   die_validate "$FAILURES check(s) failed"
