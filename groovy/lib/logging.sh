@@ -2,8 +2,21 @@
 
 ENV_SETUP_VERBOSE="${ENV_SETUP_VERBOSE:-0}"
 
+_env_setup_color_enabled() {
+  [[ -t 2 ]] && [[ -z "${NO_COLOR:-}${ENV_SETUP_NO_COLOR:-}" ]]
+}
+
 log_info() {
-  echo "[env-setup:groovy] INFO $*" >&2
+  local msg="$*"
+  if _env_setup_color_enabled; then
+    if [[ "$msg" == OK:* ]]; then
+      printf '[env-setup:groovy] \033[32mINFO OK:\033[0m %s\n' "${msg#OK: }" >&2
+    else
+      printf '[env-setup:groovy] \033[32mINFO\033[0m %s\n' "$msg" >&2
+    fi
+  else
+    echo "[env-setup:groovy] INFO $msg" >&2
+  fi
 }
 
 log_warn() {
@@ -11,7 +24,16 @@ log_warn() {
 }
 
 log_error() {
-  echo "[env-setup:groovy] ERROR $*" >&2
+  local msg="$*"
+  if _env_setup_color_enabled; then
+    if [[ "$msg" == FAIL:* ]]; then
+      printf '[env-setup:groovy] \033[31mERROR FAIL:\033[0m %s\n' "${msg#FAIL: }" >&2
+    else
+      printf '[env-setup:groovy] \033[31mERROR\033[0m %s\n' "$msg" >&2
+    fi
+  else
+    echo "[env-setup:groovy] ERROR $msg" >&2
+  fi
 }
 
 log_debug() {
