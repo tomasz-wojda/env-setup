@@ -1,5 +1,11 @@
 # Shell helper functions, git shortcuts, and command aliases for interactive Zsh sessions.
 
+_local_bin="${HOME}/.local/bin"
+if [[ -d "$_local_bin" ]] && [[ ":${path[*]}:" != *":${_local_bin}:"* ]]; then
+  path=("$_local_bin" $path)
+fi
+unset _local_bin
+
 unalias gcam ssh ls gss glo 2>/dev/null || true
 
 # Enhanced ls command providing detailed directory listing format.

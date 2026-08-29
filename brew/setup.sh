@@ -12,6 +12,7 @@ SKIP_HOMEBREW=0
 EXTRA_PACKAGE=""
 EXTRA_CASK=""
 LIST_ONLY=0
+SKIP_CONFIGURED=0
 FORCE=0
 ENV_SETUP_VERBOSE=0
 
@@ -22,6 +23,7 @@ while [[ $# -gt 0 ]]; do
     --skip-homebrew) SKIP_HOMEBREW=1; shift ;;
     --package) EXTRA_PACKAGE="$2"; shift 2 ;;
     --cask) EXTRA_CASK="$2"; shift 2 ;;
+    --skip-configured) SKIP_CONFIGURED=1; shift ;;
     --list) LIST_ONLY=1; shift ;;
     --force) FORCE=1; shift ;;
     --verbose) ENV_SETUP_VERBOSE=1; shift ;;
@@ -37,14 +39,20 @@ fi
 
 preflight_brew
 
+if [[ "$SKIP_CONFIGURED" == "1" && -z "$EXTRA_PACKAGE" && -z "$EXTRA_CASK" ]]; then
+  die_usage "--skip-configured requires --package or --cask"
+fi
+
 if [[ "$SKIP_HOMEBREW" != "1" && "$WITH_HOMEBREW" == "1" ]]; then
   install_homebrew 0
 fi
 
 ensure_brew_in_path || die_preflight "Homebrew not available (run ./install-homebrew.sh)"
 
-ensure_formulae "$FORCE"
-ensure_casks "$FORCE"
+if [[ "$SKIP_CONFIGURED" != "1" ]]; then
+  ensure_formulae "$FORCE"
+  ensure_casks "$FORCE"
+fi
 
 if [[ -n "$EXTRA_PACKAGE" ]]; then
   ensure_formula "$EXTRA_PACKAGE" "$FORCE"

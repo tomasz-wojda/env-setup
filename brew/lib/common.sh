@@ -113,7 +113,7 @@ ensure_formula() {
     return 0
   fi
   log_info "Installing $formula..."
-  brew install "$formula" || die_install "brew install $formula failed"
+  brew install -y "$formula" || die_install "brew install $formula failed"
   log_info "$formula installed"
 }
 
@@ -151,7 +151,7 @@ ensure_cask() {
     return 0
   fi
   log_info "Installing $cask..."
-  brew install --cask "$cask" || die_install "brew install --cask $cask failed"
+  brew install -y --cask "$cask" || die_install "brew install --cask $cask failed"
   log_info "$cask installed"
 }
 
@@ -185,7 +185,7 @@ update_formulae() {
   for formula in $BREW_FORMULAE; do
     if formula_installed "$formula"; then
       log_info "Upgrading $formula..."
-      brew upgrade "$formula" 2>/dev/null || log_info "$formula already at latest"
+      brew upgrade -y "$formula" 2>/dev/null || log_info "$formula already at latest"
     else
       ensure_formula "$formula" 0
     fi
@@ -210,7 +210,7 @@ update_casks() {
   for cask in $BREW_CASKS; do
     if cask_installed "$cask"; then
       log_info "Upgrading $cask..."
-      brew upgrade --cask "$cask" 2>/dev/null || log_info "$cask already at latest"
+      brew upgrade -y --cask "$cask" 2>/dev/null || log_info "$cask already at latest"
     else
       ensure_cask "$cask" 0
     fi
@@ -361,8 +361,9 @@ Options:
   -h, --help           Show this help and exit
       --with-homebrew  Install Homebrew first if missing (default)
       --skip-homebrew  Skip Homebrew install check
-      --package NAME   Install one additional formula
-      --cask NAME      Install one additional cask (macOS only)
+      --package NAME       Install one formula (with configured set unless --skip-configured)
+      --cask NAME          Install one cask (with configured set unless --skip-configured; macOS only)
+      --skip-configured    Skip configured formulae and casks; use with --package or --cask
       --list           Print configured formulae and casks and exit
       --force          Reinstall configured formulae and casks
       --verbose        Enable debug logging
@@ -370,6 +371,8 @@ Options:
 Examples:
   ./setup.sh
   ./setup.sh --package jq
+  ./setup.sh --package helm --skip-configured
+  ./setup.sh --package tfenv --skip-configured
   ./setup.sh --list
 
 Related:
