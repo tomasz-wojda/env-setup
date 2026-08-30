@@ -1,21 +1,38 @@
-unalias gcam ssh ls gss glo 2>/dev/null
+# Shell helper functions, git shortcuts, and command aliases for interactive Zsh sessions.
 
+unalias gcam ssh ls gss glo 2>/dev/null || true
+
+# Enhanced ls command providing detailed directory listing format.
+# Inputs: $@ - Directory/file arguments passed to ls
+# Outputs: Formatted directory listing
 ls() {
   command ls -la "$@"
 }
 
+# SSH wrapper ensuring standard terminal capability environment.
+# Inputs: $@ - Host and SSH connection parameters
+# Outputs: Interactive SSH session
 ssh() {
   TERM=xterm command ssh "$@"
 }
 
+# Git status shortcut with concise status reporting.
+# Inputs: $@ - Arguments passed to git status
+# Outputs: Short git status output
 gss() {
   git status --short "$@"
 }
 
+# Git log shortcut displaying the latest ten commits formatted on one line.
+# Inputs: $@ - Arguments passed to git log
+# Outputs: Git log commit history
 glo() {
   git log --oneline -10 "$@"
 }
 
+# Git commit shortcut providing automatic staging and commit message handling with dry-run support.
+# Inputs: [--amend] [--dry-run] <commit message>
+# Outputs: Executes git commit or prints planned action
 gcam() {
   local dry_run=0
   local amend=0

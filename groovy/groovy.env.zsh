@@ -1,3 +1,5 @@
+# Groovy and Java runtime environment switcher and interactive shell functions for Zsh.
+
 _groovy_env_dir="${0:A:h}"
 # shellcheck source=../java/config.defaults
 source "$_groovy_env_dir/../java/config.defaults"
@@ -16,6 +18,9 @@ fi
 
 typeset -a _groovy_path_reply
 
+# Validates and repairs the JDK link from Homebrew cellars on macOS if missing.
+# Inputs: $1 - JDK identifier
+# Outputs: Returns 0 if valid link exists, 1 otherwise
 _ensure_jdk_link() {
   local jdk_id="$1"
   local home="$JAVA_ROOT/$jdk_id"
@@ -40,6 +45,9 @@ _ensure_jdk_link() {
   ln -sfn "$src" "$home"
 }
 
+# Re-orders PATH elements to prioritize active JAVA_HOME and GROOVY_HOME binaries.
+# Inputs: None
+# Outputs: Modifies $path array
 _refresh_groovy_path() {
   local p
   _groovy_path_reply=()
@@ -55,18 +63,27 @@ _refresh_groovy_path() {
   path=("$JAVA_HOME/bin" "$GROOVY_HOME/bin" "${_groovy_path_reply[@]}")
 }
 
+# Normalizes a Groovy version string by stripping leading prefixes.
+# Inputs: $1 - Version string
+# Outputs: Echoes normalized version
 _groovy_normalize_version() {
   local v="$1"
   [[ "$v" == groovy-* ]] || v="groovy-$v"
   print -r -- "${v#groovy-}"
 }
 
+# Resolves configured JDK identifier for a Groovy major version.
+# Inputs: $1 - Groovy major number
+# Outputs: Echoes JDK identifier
 _groovy_jdk_id_for_major() {
   local major="$1"
   local param="GROOVY_JDK_${major}"
   print -r -- ${(P)param}
 }
 
+# Determines highest configured Groovy major mapped to a JDK identifier.
+# Inputs: $1 - JDK identifier
+# Outputs: Echoes Groovy major number
 _highest_groovy_major_for_jdk() {
   local jdk_id="$1"
   local major result=""
@@ -78,11 +95,17 @@ _highest_groovy_major_for_jdk() {
   print -r -- "$result"
 }
 
+# Returns compact version number of active java binary.
+# Inputs: $1 - Java home path
+# Outputs: Echoes java version string
 _java_version_short() {
   local home="$1"
   "$home/bin/java" -version 2>&1 | head -1 | sed -E 's/.*version "([^"]+)".*/\1/'
 }
 
+# Outputs environment activation summary banner to terminal.
+# Inputs: $1 - Active Groovy version string
+# Outputs: Prints banner to stdout
 _print_env_conjuring() {
   local groovy_version="$1"
   local java_version
@@ -95,6 +118,9 @@ _print_env_conjuring() {
   fi
 }
 
+# Switches active Java JDK and paired Groovy major version.
+# Inputs: $1 - JDK identifier (e.g. "openjdk-17")
+# Outputs: Activates JDK and paired Groovy environment
 switchJava() {
   local jdk_id="$1"
   local home="$JAVA_ROOT/$jdk_id"
@@ -118,6 +144,9 @@ switchJava() {
   switchGroovy "${(P)ver_param}"
 }
 
+# Switches active Groovy installation, updates current symlinks, exports JAVA_HOME, and updates PATH.
+# Inputs: $1 - Groovy version or major identifier
+# Outputs: Activates Groovy and paired JDK environment
 switchGroovy() {
   local version="$(_groovy_normalize_version "$1")"
   local target="$GROOVY_ROOT/groovy-$version"
@@ -153,7 +182,7 @@ switchGroovy() {
   _print_env_conjuring "$version"
 }
 
-unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java26 2>/dev/null
+unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java26 2>/dev/null || true
 
 groovy3() { switchGroovy "$GROOVY_VERSION_3"; }
 groovy4() { switchGroovy "$GROOVY_VERSION_4"; }
