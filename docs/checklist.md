@@ -213,6 +213,7 @@ IMPLEMENTATION CHECKLIST
 ## 13. VHS Demo Animation and Repository Root Documentation [COMPLETED]
 
 **Date:** 2026-08-30
+**Commit:** \9e59066f7c520a2d04ec1981f2297c95e56229e0\ (\docs: add root README with animated terminal installation demo\)
 
 ```md
 IMPLEMENTATION CHECKLIST
