@@ -6,7 +6,8 @@ Welcome to the technical documentation for `env-setup`, a modular runtime orches
 
 ## 1. Documentation Index
 
-### 1.1 Architecture & Design
+### 1.1 Overview & Architecture
+- [`README.md`](file:///rocky/home/gmb/repos/env-setup/README.md): Primary project overview, visual terminal demonstration, and fast-track usage cheat sheet.
 - [`docs/architecture/system-design.md`](file:///rocky/home/gmb/repos/env-setup/docs/architecture/system-design.md): System design, core principles, filesystem layout, and platform abstraction layer.
 - [`docs/specifications/functional-spec.md`](file:///rocky/home/gmb/repos/env-setup/docs/specifications/functional-spec.md): Functional matrix, compatibility constraints, and dynamic switcher specifications.
 
@@ -28,10 +29,13 @@ Welcome to the technical documentation for `env-setup`, a modular runtime orches
 
 ```
 env-setup/
+├── README.md                                 <-- Project Portal & Quick Reference
 ├── skills_used.md                            <-- Applied Skills & Methodologies
 ├── docs/
 │   ├── index.md                              <-- (You are here)
 │   ├── checklist.md                          <-- Implementation Checklists
+│   ├── assets/
+│   │   └── env-setup-demo.gif                <-- Animated Terminal Demo
 │   ├── architecture/
 │   │   └── system-design.md                  <-- System Architecture
 │   ├── specifications/
