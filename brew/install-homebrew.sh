@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Standalone installer script for provisioning Homebrew / Linuxbrew on macOS and Linux hosts.
 set -euo pipefail
 
 BREW_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

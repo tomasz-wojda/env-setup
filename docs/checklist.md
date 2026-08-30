@@ -135,6 +135,7 @@ IMPLEMENTATION CHECKLIST
 ## 9. Git Line Ending Normalization and Automated Nano Installation [COMPLETED]
 
 **Date:** 2026-08-30
+**Commit:** `1f072ded597bb6937e0c4c478a57ec3c3065b211` (`feat(shell): enforce LF line endings and integrate automated nano installation`)
 
 ```md
 IMPLEMENTATION CHECKLIST
@@ -148,4 +149,24 @@ IMPLEMENTATION CHECKLIST
 8. Execute shell/setup.sh to install nano on Linux. [DONE]
 9. Execute shell/verify.sh and scripts/test-shell-functions.sh to validate all checks. [DONE]
 10. Update docs/checklist.md, commit changes with semantic message, and push to remote origin. [DONE]
+```
+
+---
+
+## 10. Linux Homebrew Support and Cross-Platform Brew Module Integration [COMPLETED]
+
+**Date:** 2026-08-30
+
+```md
+IMPLEMENTATION CHECKLIST
+1. Update brew/lib/common.sh to add Linuxbrew path detection in ensure_brew_in_path. [DONE]
+2. Update preflight_brew and install_homebrew in brew/lib/common.sh to support Linux. [DONE]
+3. Update ensure_casks, verify_casks, and update_casks in brew/lib/common.sh to conditionally bypass on Linux. [DONE]
+4. Update brew/install-homebrew.sh, brew/setup.sh, and brew/update-brew.sh documentation and help strings. [DONE]
+5. Execute brew/verify.sh on Rocky Linux WSL host. [DONE]
+6. Execute brew/setup.sh on Rocky Linux WSL host. [DONE]
+7. Execute brew/update-brew.sh --dry-run on Linux. [DONE]
+8. Execute all module verify scripts (java/verify.sh, groovy/verify.sh, shell/verify.sh). [DONE]
+9. Update docs/checklist.md with checklist 10 completion status. [DONE]
+10. Create semantic commit and push to remote origin. [DONE]
 ```

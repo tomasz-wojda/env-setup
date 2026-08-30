@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Updates Homebrew package definitions and upgrades installed formulae and casks.
 set -euo pipefail
 
 BREW_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

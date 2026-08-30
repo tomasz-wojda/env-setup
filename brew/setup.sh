@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Bootstraps Homebrew and installs configured formulae and casks on macOS and Linux.
 set -euo pipefail
 
 BREW_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

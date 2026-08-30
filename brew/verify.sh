@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Verifies presence and health of Homebrew and configured formulae/casks.
 set -euo pipefail
 
 BREW_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

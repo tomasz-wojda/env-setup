@@ -50,7 +50,7 @@ check "env-setup.env.zsh exists" test -f "$ENV_SETUP_ROOT/env-setup.env.zsh"
 check "shell.env.zsh exists" test -f "$SHELL_SCRIPT_DIR/shell.env.zsh"
 
 if grep -qF "$ZSHRC_HOOK_BEGIN" "${HOME}/.zshrc" 2>/dev/null \
-  && grep -qF "$ENV_SETUP_ROOT/env-setup.env.zsh" "${HOME}/.zshrc" 2>/dev/null; then
+  && grep -qE 'source ".*env-setup\.env\.zsh"' "${HOME}/.zshrc" 2>/dev/null; then
   log_info "OK: ~/.zshrc unified env-setup hook"
 else
   log_error "FAIL: ~/.zshrc unified env-setup hook"
