@@ -213,18 +213,33 @@ IMPLEMENTATION CHECKLIST
 ## 13. VHS Demo Animation and Repository Root Documentation [COMPLETED]
 
 **Date:** 2026-08-30
-**Commit:** \9e59066f7c520a2d04ec1981f2297c95e56229e0\ (\docs: add root README with animated terminal installation demo\)
+**Commit:** `9e59066f7c520a2d04ec1981f2297c95e56229e0` (`docs: add root README with animated terminal installation demo`)
 
 ```md
 IMPLEMENTATION CHECKLIST
-1. Install 'vhs' package and dependencies via Homebrew in Rocky Linux WSL2.
-2. Verify executable availability for 'vhs', 'ttyd', and 'ffmpeg'.
-3. Create target assets directory /home/gmb/repos/env-setup/docs/assets.
-4. Author VHS tape file /home/gmb/repos/env-set-vhs/env-setup.tape capturing the installation and usage demonstration.
-5. Execute VHS compiler to render /home/gmb/repos/env-setup/docs/assets/env-setup-demo.gif.
-6. Verify generated GIF asset integrity, dimensions, and file size.
-7. Author top-level /home/gmb/repos/env-setup/README.md integrating the animated demo GIF, system documentation, and quickstart instructions.
-8. Update /home/gmb/repos/env-setup/docs/index.md and /home/gmb/repos/env-setup/docs/checklist.md with milestone records.
-9. Synchronize audit logs across repositories.
+1. Install 'vhs' package and dependencies via Homebrew in Rocky Linux WSL2. [DONE]
+2. Verify executable availability for 'vhs', 'ttyd', and 'ffmpeg'. [DONE]
+3. Create target assets directory /home/gmb/repos/env-setup/docs/assets. [DONE]
+4. Author VHS tape file /home/gmb/repos/env-set-vhs/env-setup.tape capturing the installation and usage demonstration. [DONE]
+5. Execute VHS compiler to render /home/gmb/repos/env-setup/docs/assets/env-setup-demo.gif. [DONE]
+6. Verify generated GIF asset integrity, dimensions, and file size. [DONE]
+7. Author top-level /home/gmb/repos/env-setup/README.md integrating the animated demo GIF, system documentation, and quickstart instructions. [DONE]
+8. Update /home/gmb/repos/env-setup/docs/index.md and /home/gmb/repos/env-setup/docs/checklist.md with milestone records. [DONE]
+9. Synchronize audit logs across repositories. [DONE]
 ```
 
+---
+
+## 14. Demo Animation Pacing & Delay Calibration [COMPLETED]
+
+**Date:** 2026-08-30
+
+```md
+IMPLEMENTATION CHECKLIST
+1. Update /home/gmb/repos/env-set-vhs/env-setup.tape with +1.5s delay increments on all command execution sleeps. [DONE]
+2. Execute VHS compiler to re-render /home/gmb/repos/env-setup/docs/assets/env-setup-demo.gif. [DONE]
+3. Verify integrity, frame pacing, and file attributes of the regenerated animated GIF. [DONE]
+4. Commit updated GIF asset in env-setup repository with semantic commit and push to remote origin. [DONE]
+5. Synchronize /mnt/c/repos/env-setup repository mirror. [DONE]
+6. Synchronize audit logs in prompt.log across workspaces. [DONE]
+```
