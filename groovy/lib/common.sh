@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
+# Common utility functions, helpers, and workflow procedures for Groovy and Java environment management.
 
 GROOVY_TEMP_DIR=""
 
+# Cleans up temporary working directories created during archive extraction.
+# Inputs: None (reads $GROOVY_TEMP_DIR)
+# Outputs: None
 cleanup_temp() {
   if [[ -n "$GROOVY_TEMP_DIR" && -d "$GROOVY_TEMP_DIR" ]]; then
     rm -rf "$GROOVY_TEMP_DIR"
@@ -9,6 +13,9 @@ cleanup_temp() {
   fi
 }
 
+# Initializes common subsystem libraries, error trapping, and logging.
+# Inputs: None
+# Outputs: None
 init_common() {
   # shellcheck source=logging.sh
   source "$GROOVY_SCRIPT_DIR/lib/logging.sh"
@@ -17,16 +24,25 @@ init_common() {
   trap cleanup_temp EXIT INT TERM
 }
 
+# Returns the target installation directory for a given Groovy version.
+# Inputs: $1 - Version string (e.g. "4.0.33")
+# Outputs: Echoes full path to Groovy directory
 groovy_dir_for_version() {
   echo "$GROOVY_ROOT/groovy-$1"
 }
 
+# Resolves the configured default pinned version for a Groovy major.
+# Inputs: $1 - Major number ("3", "4", "5", "6")
+# Outputs: Echoes pinned version string
 pinned_version_for_major() {
   local major="$1"
   local var="GROOVY_VERSION_${major}_PIN"
   echo "${!var}"
 }
 
+# Resolves the active version for a Groovy major from versions.conf or fallback to pin.
+# Inputs: $1 - Major number ("3", "4", "5", "6")
+# Outputs: Echoes active version string
 version_for_major() {
   local major="$1"
   local var="GROOVY_VERSION_$major"
@@ -37,10 +53,17 @@ version_for_major() {
   fi
 }
 
+# Fetches directory listing HTML from the JFrog Groovy archive repository.
+# Inputs: None
+# Outputs: Echoes HTML response body
 fetch_groovy_listing() {
+  # External call: curl to fetch archive listing
   curl -fsSL --retry 3 --retry-delay 2 "$GROOVY_ZIPS_URL"
 }
 
+# Parses and lists available Groovy versions on JFrog for a given major.
+# Inputs: $1 - Major number ("3", "4", "5", "6")
+# Outputs: Echoes newline-delimited sorted version strings
 list_jfrog_versions() {
   local major="$1"
   fetch_groovy_listing | grep -oE "${GROOVY_ZIP_PREFIX}-${major}[^\"]+\.zip" \
@@ -48,11 +71,17 @@ list_jfrog_versions() {
     | sort -V
 }
 
+# Retrieves the latest available Groovy release for a given major.
+# Inputs: $1 - Major number ("3", "4", "5", "6")
+# Outputs: Echoes latest version string
 latest_groovy_version() {
   local major="$1"
   list_jfrog_versions "$major" | tail -1
 }
 
+# Identifies the preceding published Groovy release for rollback operations.
+# Inputs: $1 - Major number, $2 - Current version string
+# Outputs: Echoes previous version string, returns 1 if none found
 previous_jfrog_version() {
   local major="$1"
   local current="$2"
@@ -72,25 +101,36 @@ previous_jfrog_version() {
   return 1
 }
 
+# Constructs the download URL for a specific Groovy version zip archive.
+# Inputs: $1 - Groovy version string
+# Outputs: Echoes URL string
 groovy_zip_url() {
   echo "${GROOVY_ZIPS_URL}${GROOVY_ZIP_PREFIX}-$1.zip"
 }
 
+# Downloads a Groovy zip archive to a local target path.
+# Inputs: $1 - Groovy version string, $2 - Target destination file path
+# Outputs: None
 download_groovy_zip() {
   local version="$1"
   local dest="$2"
   local url
   url="$(groovy_zip_url "$version")"
   log_debug "Downloading $url"
+  # External call: curl to download archive
   curl -fsSL --retry 3 --retry-delay 2 -o "$dest" "$url" || die_install "Download failed: $url"
   if [[ ! -s "$dest" ]]; then
     die_install "Downloaded zip is empty: $url"
   fi
 }
 
+# Unpacks and installs a Groovy archive into the GROOVY_ROOT directory structure.
+# Inputs: $1 - Path to zip archive, $2 - Staging directory
+# Outputs: Echoes installed version string
 install_groovy_zip() {
   local zipfile="$1"
   local staging="$2"
+  # External call: unzip archive to staging location
   unzip -q "$zipfile" -d "$staging" || die_install "unzip failed: $zipfile"
   local dir
   dir="$(find "$staging" -maxdepth 1 -type d -name 'groovy-*' | head -1)"
@@ -110,6 +150,9 @@ install_groovy_zip() {
   echo "$version"
 }
 
+# Orchestrates downloading and installing a specified Groovy version.
+# Inputs: $1 - Groovy version string
+# Outputs: Echoes installed version string
 install_groovy_version() {
   local version="$1"
   local dest
@@ -126,11 +169,17 @@ install_groovy_version() {
   install_groovy_zip "$zip" "$GROOVY_TEMP_DIR"
 }
 
+# Updates the 'current' symlink under GROOVY_ROOT to the specified version.
+# Inputs: $1 - Version string
+# Outputs: None
 set_current_groovy() {
   local version="$1"
   link_current "$GROOVY_ROOT" "$(groovy_dir_for_version "$version")"
 }
 
+# Writes the versions.conf configuration file recording active Groovy versions.
+# Inputs: None
+# Outputs: Updates versions.conf
 write_versions_conf() {
   local tmp="$GROOVY_SCRIPT_DIR/versions.conf.tmp.$$"
   {
@@ -146,6 +195,9 @@ write_versions_conf() {
   mv "$tmp" "$GROOVY_SCRIPT_DIR/versions.conf"
 }
 
+# Lists all installed Groovy versions found on disk for a given major.
+# Inputs: $1 - Major number ("3", "4", "5", "6")
+# Outputs: Echoes newline-delimited version strings
 installed_groovy_versions() {
   local major="$1"
   local d v
@@ -158,12 +210,18 @@ installed_groovy_versions() {
   shopt -u nullglob
 }
 
+# Resolves the active version string pointed to by the 'current' symlink.
+# Inputs: None
+# Outputs: Echoes current active version string or empty
 resolve_current_groovy_version() {
   if [[ -L "$GROOVY_ROOT/current" ]]; then
     basename "$(readlink "$GROOVY_ROOT/current")" | sed 's/^groovy-//'
   fi
 }
 
+# Removes older unused installations of a Groovy major version.
+# Inputs: $1 - Major number
+# Outputs: None
 clean_groovy_major() {
   local major="$1"
   local active current_target
@@ -186,6 +244,9 @@ clean_groovy_major() {
   done < <(installed_groovy_versions "$major")
 }
 
+# Cleans superseded versions across all configured Groovy majors.
+# Inputs: None
+# Outputs: None
 clean_groovy_all() {
   local major
   for major in $GROOVY_INITIAL_MAJORS; do
@@ -193,6 +254,9 @@ clean_groovy_all() {
   done
 }
 
+# Rolls back a Groovy major to the preceding release version.
+# Inputs: $1 - Major number, $2 - Dry run flag (0 or 1)
+# Outputs: None
 rollback_groovy_major() {
   local major="$1"
   local dry_run="${2:-0}"
@@ -248,6 +312,9 @@ rollback_groovy_major() {
   log_info "Run: groovy$major or source ~/.zshrc"
 }
 
+# Upgrades a Groovy major version to its latest published release.
+# Inputs: $1 - Major number, $2 - Clean flag (0 or 1), $3 - Force flag (0 or 1), $4 - Dry run flag (0 or 1)
+# Outputs: None
 update_groovy_major() {
   local major="$1"
   local clean="${2:-0}"
@@ -282,6 +349,9 @@ update_groovy_major() {
   log_info "Run: groovy$major or source ~/.zshrc"
 }
 
+# Displays usage help text for the main Groovy setup script.
+# Inputs: None
+# Outputs: Prints help text to stdout
 show_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
@@ -308,6 +378,9 @@ Related:
 EOF
 }
 
+# Displays usage help text for the Java setup script.
+# Inputs: None
+# Outputs: Prints help text to stdout
 show_java_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
@@ -330,6 +403,9 @@ Related:
 EOF
 }
 
+# Displays usage help text for the Java verification script.
+# Inputs: None
+# Outputs: Prints help text to stdout
 show_java_verify_help() {
   cat << 'EOF'
 Usage: verify.sh [options]
@@ -347,6 +423,9 @@ Related:
 EOF
 }
 
+# Displays usage help text for the Groovy update script.
+# Inputs: None
+# Outputs: Prints help text to stdout
 show_update_groovy_help() {
   cat << 'EOF'
 Usage: update-groovy.sh [major] [options]
@@ -385,6 +464,9 @@ Related:
 EOF
 }
 
+# Displays usage help text for the Java update script.
+# Inputs: None
+# Outputs: Prints help text to stdout
 show_update_java_help() {
   cat << 'EOF'
 Usage: update-java.sh [17|21|25|26] [options]
@@ -416,13 +498,17 @@ Related:
 EOF
 }
 
+# Verifies prerequisite commands, system dependencies, directory paths, and network connectivity.
+# Inputs: $1 - Skip network flag (0 or 1), $2 - Skip JDK flag (0 or 1)
+# Outputs: None. Exits on failure.
 preflight_common() {
   local skip_network="${1:-0}"
   local skip_jdk="${2:-0}"
   if [[ "${BASH_VERSINFO[0]:-0}" -lt 3 ]]; then
     die_preflight "bash 3.2+ required"
   fi
-  for cmd in curl unzip sort ln mkdir; do
+  # Verify availability of core CLI utilities
+  for cmd in curl unzip sort ln mkdir tar gzip; do
     command -v "$cmd" >/dev/null 2>&1 || die_preflight "Required command not found: $cmd"
   done
   if [[ "$skip_jdk" != "1" ]] && [[ "$(detect_os)" == "darwin" ]]; then
