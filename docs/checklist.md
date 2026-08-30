@@ -265,6 +265,7 @@ IMPLEMENTATION CHECKLIST
 ## 16. Demo Animation Command Flow & Tree Hierarchy Update [COMPLETED]
 
 **Date:** 2026-08-31
+**Commit:** `0d5a4c0fa31e13cb4dbecf89bc5f492a54bf9fa7` (`docs: update demo animation with tree hierarchy and screen clear flow`)
 
 ```md
 IMPLEMENTATION CHECKLIST
