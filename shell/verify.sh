@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verifies Zsh installation, ~/.zshrc unified hook configuration, and shell function availability.
+# Verifies Zsh and Nano installations, ~/.zshrc unified hook configuration, and shell function availability.
 set -euo pipefail
 
 SHELL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,6 +36,13 @@ if is_zsh_installed; then
   log_info "OK: zsh binary present ($(zsh --version 2>&1 | head -1))"
 else
   log_error "FAIL: zsh binary not found in PATH"
+  FAILURES=$((FAILURES + 1))
+fi
+
+if is_package_installed nano; then
+  log_info "OK: nano binary present ($(nano --version 2>&1 | head -1))"
+else
+  log_error "FAIL: nano binary not found in PATH"
   FAILURES=$((FAILURES + 1))
 fi
 

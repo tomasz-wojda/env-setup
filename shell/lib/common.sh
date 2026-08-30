@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shell environment configuration, Zsh provisioning, and hook lifecycle management functions.
+# Shell environment configuration, CLI tool provisioning, and hook lifecycle management functions.
 
 # Resolves the absolute root directory of the env-setup repository.
 # Inputs: None
@@ -77,30 +77,38 @@ detect_linux_package_manager() {
   fi
 }
 
+# Checks whether a CLI executable binary is available in the current PATH.
+# Inputs: $1 - Command or binary name
+# Outputs: Returns 0 if command is available and executable, 1 otherwise
+is_package_installed() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1
+}
+
 # Checks whether Zsh binary is installed and executable in system PATH.
 # Inputs: None
 # Outputs: Returns 0 if zsh is executable, 1 otherwise
 is_zsh_installed() {
-  command -v zsh >/dev/null 2>&1 && zsh --version >/dev/null 2>&1
+  is_package_installed zsh && zsh --version >/dev/null 2>&1
 }
 
-# Installs Zsh package on Linux using detected package manager with privilege escalation if needed.
-# Inputs: None
+# Installs a package on Linux using detected package manager with privilege escalation if needed.
+# Inputs: $1 - Package name to install
 # Outputs: None. Exits on installation failure.
-install_zsh_linux() {
-  local pm pkg sudo_cmd=""
+install_linux_package() {
+  local pkg="$1"
+  local pm sudo_cmd=""
   pm="$(detect_linux_package_manager)"
-  pkg="${ZSH_PACKAGE_NAME:-zsh}"
 
   if [[ "$(id -u)" -ne 0 ]]; then
     if command -v sudo >/dev/null 2>&1; then
       sudo_cmd="sudo"
     else
-      die_preflight "Root privileges or sudo required to install zsh via $pm"
+      die_preflight "Root privileges or sudo required to install $pkg via $pm"
     fi
   fi
 
-  log_info "Installing zsh via $pm..."
+  log_info "Installing $pkg via $pm..."
   case "$pm" in
     dnf)
       $sudo_cmd dnf install -y "$pkg" || die_install "dnf install $pkg failed"
@@ -123,10 +131,19 @@ install_zsh_linux() {
       "$brew_bin" install "$pkg" || die_install "brew install $pkg failed"
       ;;
     *)
-      die_install "No supported package manager detected on Linux to install zsh"
+      die_install "No supported package manager detected on Linux to install $pkg"
       ;;
   esac
-  log_info "Zsh installation complete: $(zsh --version 2>&1 | head -1)"
+  log_info "$pkg installation complete"
+}
+
+# Installs Zsh package on Linux using detected package manager with privilege escalation if needed.
+# Inputs: None
+# Outputs: None. Exits on installation failure.
+install_zsh_linux() {
+  local pkg="${ZSH_PACKAGE_NAME:-zsh}"
+  install_linux_package "$pkg"
+  log_info "Zsh ready: $(zsh --version 2>&1 | head -1)"
 }
 
 # Verifies presence of Zsh on macOS or installs via Homebrew.
@@ -165,6 +182,35 @@ ensure_zsh() {
       ;;
     *)
       die_preflight "Unsupported OS for automated Zsh installation: $os"
+      ;;
+  esac
+}
+
+# Ensures nano editor binary is installed on the host system.
+# Inputs: $1 - Force flag (0 or 1)
+# Outputs: None
+ensure_nano() {
+  local force="${1:-0}"
+  if is_package_installed nano && [[ "$force" != "1" ]]; then
+    log_info "Nano already installed: $(nano --version 2>&1 | head -1)"
+    return 0
+  fi
+  local os
+  os="$(detect_os)"
+  case "$os" in
+    darwin)
+      if command -v brew >/dev/null 2>&1; then
+        log_info "Installing nano via Homebrew..."
+        brew install nano || die_install "brew install nano failed"
+      else
+        log_info "Nano present at $(command -v nano)"
+      fi
+      ;;
+    linux)
+      install_linux_package "${NANO_PACKAGE_NAME:-nano}"
+      ;;
+    *)
+      die_preflight "Unsupported OS for automated Nano installation: $os"
       ;;
   esac
 }
@@ -217,17 +263,18 @@ show_shell_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Bootstrap shell environment, install Zsh if absent, and configure unified hook in ~/.zshrc.
+Bootstrap shell environment, install Zsh and Nano if absent, and configure unified hook in ~/.zshrc.
 
 Options:
   -h, --help               Show this help and exit
       --skip-zsh-install   Skip automated Zsh package installation
-      --force              Reinstall Zsh even if already present
+      --skip-nano-install  Skip automated Nano package installation
+      --force              Reinstall packages even if already present
       --verbose            Enable debug logging
 
 Examples:
   ./setup.sh
-  ./setup.sh --skip-zsh-install
+  ./setup.sh --skip-nano-install
 
 Related:
   ./verify.sh
@@ -242,7 +289,7 @@ show_shell_verify_help() {
   cat << 'EOF'
 Usage: verify.sh [options]
 
-Verify Zsh installation, ~/.zshrc hook, and shell function runtime execution in zsh.
+Verify Zsh and Nano installations, ~/.zshrc hook, and shell function runtime execution in zsh.
 
 Options:
   -h, --help       Show this help and exit

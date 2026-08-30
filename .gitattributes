@@ -1,0 +1,14 @@
+# Set default behavior to automatically normalize line endings to LF
+* text=auto eol=lf
+
+# Force LF on all shell, zsh, and script files
+*.sh text eol=lf
+*.zsh text eol=lf
+
+# Force LF on configuration and documentation files
+*.defaults text eol=lf
+*.conf text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

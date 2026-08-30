@@ -1,5 +1,5 @@
 # Shell module configuration defaults.
-# Defines hook delimiters, managed shell functions, and Zsh installation defaults.
+# Defines hook delimiters, managed shell functions, and CLI tool package names.
 
 ZSHRC_HOOK_BEGIN="# >>> env-setup >>>"
 ZSHRC_HOOK_END="# <<< env-setup <<<"
@@ -7,3 +7,4 @@ ZSHRC_HOOK_LEGACY_BEGIN="# >>> env-setup groovy >>>"
 ZSHRC_HOOK_LEGACY_END="# <<< env-setup groovy <<<"
 SHELL_FUNCTIONS="ls ssh gss glo gcam"
 ZSH_PACKAGE_NAME="zsh"
+NANO_PACKAGE_NAME="nano"
