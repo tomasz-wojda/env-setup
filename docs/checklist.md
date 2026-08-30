@@ -233,6 +233,7 @@ IMPLEMENTATION CHECKLIST
 ## 14. Demo Animation Pacing & Delay Calibration [COMPLETED]
 
 **Date:** 2026-08-30
+**Commit:** `f67224021bb46219bf08044738435d8e78553255` (`docs: recalibrate terminal demo animation delays and pacing`)
 
 ```md
 IMPLEMENTATION CHECKLIST
