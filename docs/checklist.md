@@ -249,6 +249,7 @@ IMPLEMENTATION CHECKLIST
 ## 15. Pre-Enter Command Pause Calibration & Demo Re-compilation [COMPLETED]
 
 **Date:** 2026-08-30
+**Commit:** `7904a5944d18306df9a444101e127394602f37c3` (`docs: calibrate pre-execution pauses before Enter in demo animation`)
 
 ```md
 IMPLEMENTATION CHECKLIST
