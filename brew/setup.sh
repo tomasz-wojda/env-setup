@@ -34,6 +34,8 @@ done
 if [[ "$LIST_ONLY" == "1" ]]; then
   echo "Configured formulae: $BREW_FORMULAE"
   echo "Configured casks: $BREW_CASKS"
+  echo "Configured Terraform versions (tfenv): ${BREW_TFENV_VERSIONS:-none}"
+  echo "Default Terraform version (tfenv): ${BREW_TFENV_DEFAULT:-unset}"
   exit 0
 fi
 
@@ -60,6 +62,10 @@ fi
 
 if [[ -n "$EXTRA_CASK" ]]; then
   ensure_cask "$EXTRA_CASK" "$FORCE"
+fi
+
+if [[ -n "${BREW_TFENV_VERSIONS:-}" ]] && command -v tfenv >/dev/null 2>&1; then
+  ensure_tfenv_versions "$FORCE"
 fi
 
 log_info "Brew setup complete."

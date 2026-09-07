@@ -170,6 +170,31 @@ ensure_casks() {
   done
 }
 
+tfenv_version_installed() {
+  local version="$1"
+  [[ -x "${HOME}/.config/tfenv/versions/${version}/terraform" ]]
+}
+
+ensure_tfenv_versions() {
+  local force="${1:-0}"
+  local version
+  [[ -n "${BREW_TFENV_VERSIONS:-}" ]] || return 0
+  command -v tfenv >/dev/null 2>&1 || die_install "tfenv required to install Terraform versions"
+  for version in $BREW_TFENV_VERSIONS; do
+    if tfenv_version_installed "$version" && [[ "$force" != "1" ]]; then
+      log_info "Terraform $version already installed via tfenv"
+    else
+      log_info "Installing Terraform $version via tfenv..."
+      tfenv install "$version" || die_install "tfenv install $version failed"
+      log_info "Terraform $version installed via tfenv"
+    fi
+  done
+  if [[ -n "${BREW_TFENV_DEFAULT:-}" ]]; then
+    log_info "Setting default Terraform version to $BREW_TFENV_DEFAULT..."
+    tfenv use "$BREW_TFENV_DEFAULT" || die_install "tfenv use $BREW_TFENV_DEFAULT failed"
+  fi
+}
+
 # Updates all configured formulae to their latest versions.
 # Inputs: $1 - Dry run flag (0 or 1)
 # Outputs: None
@@ -282,7 +307,7 @@ verify_formulae() {
     log_info "OK: configured formulae up to date"
   fi
   if [[ "$failures" -gt 0 ]]; then
-    die_validate "$failures configured formula(e) missing"
+    return 1
   fi
 }
 
@@ -312,7 +337,34 @@ verify_casks() {
     log_info "OK: configured casks up to date"
   fi
   if [[ "$failures" -gt 0 ]]; then
-    die_validate "$failures configured cask(s) missing"
+    return 1
+  fi
+}
+
+verify_tfenv_versions() {
+  local failures=0
+  local version
+  [[ -n "${BREW_TFENV_VERSIONS:-}" ]] || return 0
+  if ! command -v tfenv >/dev/null 2>&1; then
+    log_error "FAIL: tfenv not installed (required for Terraform)"
+    return 1
+  fi
+  for version in $BREW_TFENV_VERSIONS; do
+    if tfenv_version_installed "$version"; then
+      log_info_brew_item_ok "terraform" "$version installed via tfenv"
+    else
+      log_error_brew_item_fail "terraform" "$version not installed via tfenv"
+      failures=$((failures + 1))
+    fi
+  done
+  if command -v terraform >/dev/null 2>&1; then
+    log_info "OK: terraform on PATH ($("terraform" version 2>&1 | head -1))"
+  else
+    log_error "FAIL: terraform not on PATH"
+    failures=$((failures + 1))
+  fi
+  if [[ "$failures" -gt 0 ]]; then
+    return 1
   fi
 }
 
@@ -320,8 +372,13 @@ verify_casks() {
 # Inputs: None
 # Outputs: None
 verify_brew_packages() {
-  verify_formulae
-  verify_casks
+  local failures=0
+  verify_formulae || failures=$((failures + 1))
+  verify_tfenv_versions || failures=$((failures + 1))
+  verify_casks || failures=$((failures + 1))
+  if [[ "$failures" -gt 0 ]]; then
+    die_validate "$failures brew check group(s) failed"
+  fi
   log_info "All brew checks passed."
 }
 
@@ -355,7 +412,8 @@ show_brew_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Install configured Homebrew formulae and casks (tree, gh, awscli@2, kubectl, python3, argocd, nano, etc.).
+Install configured Homebrew formulae and casks (tree, gh, kubectl, helm, tfenv, python3, argocd, nano, etc.).
+Terraform versions are installed via tfenv (see BREW_TFENV_VERSIONS in config.defaults).
 
 Options:
   -h, --help           Show this help and exit
