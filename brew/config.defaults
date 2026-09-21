@@ -2,7 +2,7 @@
 # Defines formula and cask packages managed by env-setup on macOS.
 
 BREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-BREW_FORMULAE="tree gh awscli@2 kubectl helm tfenv python3 argocd sshpass node nano"
+BREW_FORMULAE="tree gh awscli@2 kubectl helm tfenv python3 argocd sshpass node nano ripgrep"
 BREW_CASKS="nimble-commander wezterm lens freelens"
 BREW_TFENV_VERSIONS="1.15.3"
 BREW_TFENV_DEFAULT="1.15.3"
