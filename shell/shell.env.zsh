@@ -6,7 +6,7 @@ if [[ -d "$_local_bin" ]] && [[ ":${path[*]}:" != *":${_local_bin}:"* ]]; then
 fi
 unset _local_bin
 
-unalias gcam ssh ls gss glo 2>/dev/null || true
+unalias gcam ssh ls gss gssb glo 2>/dev/null || true
 
 # Enhanced ls command providing detailed directory listing format.
 # Inputs: $@ - Directory/file arguments passed to ls
@@ -27,6 +27,10 @@ ssh() {
 # Outputs: Short git status output
 gss() {
   git status --short "$@"
+}
+
+gssb() {
+  git status --short --branch "$@"
 }
 
 # Git log shortcut displaying the latest ten commits formatted on one line.
