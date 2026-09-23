@@ -40,7 +40,7 @@ else
 fi
 
 if is_package_installed nano; then
-  log_info "OK: nano binary present ($(nano --version 2>&1 | head -1))"
+  log_info "OK: nano binary present ($(command -v nano))"
 else
   log_error "FAIL: nano binary not found in PATH"
   FAILURES=$((FAILURES + 1))
@@ -62,7 +62,7 @@ shell_function_check_output() {
     echo "error:zsh_missing"
     return 1
   fi
-  zsh -i -c "
+  zsh --no-rcs -c "
     source \"$ENV_SETUP_ROOT/env-setup.env.zsh\" >/dev/null 2>&1
     for fn in $SHELL_FUNCTIONS; do
       if whence -w \"\$fn\" 2>/dev/null | grep -q function; then
