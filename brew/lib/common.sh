@@ -358,7 +358,28 @@ verify_tfenv_versions() {
     fi
   done
   if command -v terraform >/dev/null 2>&1; then
-    log_info "OK: terraform on PATH ($("terraform" version 2>&1 | head -1))"
+    local tf_line=""
+    tf_line="$(python3 -c '
+import os, pty, select, subprocess
+master, slave = pty.openpty()
+env = os.environ.copy()
+env["CHECKPOINT_DISABLE"] = "1"
+proc = subprocess.Popen(["terraform", "version"], stdout=slave, stderr=subprocess.DEVNULL, env=env)
+os.close(slave)
+ready, _, _ = select.select([master], [], [], 3)
+line = b""
+if ready:
+    line = os.read(master, 256).splitlines()[0]
+proc.kill()
+proc.wait()
+os.close(master)
+print(line.decode("utf-8", "replace"), end="")
+' 2>/dev/null || true)"
+    if [[ -n "$tf_line" ]]; then
+      log_info "OK: terraform on PATH ($tf_line)"
+    else
+      log_info "OK: terraform on PATH ($(command -v terraform))"
+    fi
   else
     log_error "FAIL: terraform not on PATH"
     failures=$((failures + 1))
@@ -412,7 +433,7 @@ show_brew_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Install configured Homebrew formulae and casks (tree, gh, kubectl, helm, tfenv, python3, argocd, nano, etc.).
+Install configured Homebrew formulae and casks (tree, gh, kubectl, helm, tfenv, python3, argocd, jq, yq, ansible, etc.).
 Terraform versions are installed via tfenv (see BREW_TFENV_VERSIONS in config.defaults).
 
 Options:
