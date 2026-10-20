@@ -32,7 +32,7 @@ assert_func() {
 }
 
 echo "=== Testing Shell Utility Functions ==="
-for fn in ls ssh gss glo gcam switchGroovy switchJava groovy3 groovy4 groovy5 groovy6 java17 java25 java26; do
+for fn in ls ssh gss glo gcam switchGroovy switchJava groovy3 groovy4 groovy5 groovy6 java17 java25 java27; do
   assert_func "$fn"
 done
 

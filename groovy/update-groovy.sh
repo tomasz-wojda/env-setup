@@ -15,6 +15,7 @@ CLEAN_ALL=0
 DRY_RUN=0
 FORCE=0
 ROLLBACK=0
+CHECK_ONLY=0
 ENV_SETUP_VERBOSE=0
 
 if [[ $# -eq 0 ]]; then
@@ -26,6 +27,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) show_update_groovy_help; exit 0 ;;
     --all) DO_ALL=1; shift ;;
+    --check) CHECK_ONLY=1; shift ;;
     --clean) DO_CLEAN=1; shift ;;
     --clean-only) CLEAN_ONLY=1; shift ;;
     --clean-all) CLEAN_ALL=1; shift ;;
@@ -33,12 +35,21 @@ while [[ $# -gt 0 ]]; do
     --force) FORCE=1; shift ;;
     --rollback) ROLLBACK=1; shift ;;
     --verbose) ENV_SETUP_VERBOSE=1; shift ;;
-    [3456]) MAJOR="$1"; shift ;;
+    [0-9]*)
+      major_in_list "$1" "$GROOVY_INITIAL_MAJORS" || die_usage "Groovy major $1 is not configured (configured: $GROOVY_INITIAL_MAJORS)"
+      MAJOR="$1"
+      shift
+      ;;
     *) die_usage "Unknown option or major: $1 (try --help)" ;;
   esac
 done
 
 preflight_common "$DRY_RUN" 1
+
+if [[ "$CHECK_ONLY" == "1" ]]; then
+  report_new_groovy_major
+  exit 0
+fi
 
 if [[ "$CLEAN_ALL" == "1" ]]; then
   if [[ "$DRY_RUN" == "1" ]]; then
@@ -50,13 +61,17 @@ if [[ "$CLEAN_ALL" == "1" ]]; then
 fi
 
 if [[ "$CLEAN_ONLY" == "1" ]]; then
-  [[ -n "$MAJOR" ]] || die_usage "--clean-only requires major (3-6)"
+  [[ -n "$MAJOR" ]] || die_usage "--clean-only requires major ($GROOVY_INITIAL_MAJORS)"
   if [[ "$DRY_RUN" == "1" ]]; then
     log_info "[dry-run] would clean major $MAJOR"
     exit 0
   fi
   clean_groovy_major "$MAJOR"
   exit 0
+fi
+
+if [[ "$DRY_RUN" != "1" && "$ROLLBACK" != "1" ]] && [[ "$DO_ALL" == "1" || -n "$MAJOR" ]]; then
+  report_new_groovy_major
 fi
 
 if [[ "$DO_ALL" == "1" ]]; then
@@ -70,7 +85,7 @@ if [[ "$DO_ALL" == "1" ]]; then
   exit 0
 fi
 
-[[ -n "$MAJOR" ]] || die_usage "Major required (3-6) unless using --all or --clean-all"
+[[ -n "$MAJOR" ]] || die_usage "Major required ($GROOVY_INITIAL_MAJORS) unless using --all or --clean-all"
 
 if [[ "$ROLLBACK" == "1" ]]; then
   rollback_groovy_major "$MAJOR" "$DRY_RUN"

@@ -79,6 +79,53 @@ latest_groovy_version() {
   list_jfrog_versions "$major" | tail -1
 }
 
+# Returns the highest number in a space-separated list of majors.
+# Inputs: $1 - Space-separated majors (e.g. "17 21 25 27")
+# Outputs: Echoes the highest major
+highest_major() {
+  printf '%s\n' $1 | sort -n | tail -1
+}
+
+# Checks whether a major is in a space-separated list of majors.
+# Inputs: $1 - Major to look up, $2 - Space-separated majors
+# Outputs: Returns 0 when present, 1 otherwise
+major_in_list() {
+  local needle="$1"
+  local item
+  for item in $2; do
+    [[ "$item" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+# Finds the highest Groovy major published on JFrog.
+# Inputs: None
+# Outputs: Echoes the major number, or nothing when the listing has no matches
+latest_groovy_major() {
+  fetch_groovy_listing | grep -oE "${GROOVY_ZIP_PREFIX}-[0-9]+\." \
+    | sed -E "s/^${GROOVY_ZIP_PREFIX}-([0-9]+)\./\1/" \
+    | sort -n | tail -1 || true
+}
+
+# Reports whether a Groovy major newer than the configured set is published.
+# Inputs: None (reads GROOVY_INITIAL_MAJORS)
+# Outputs: Logs a warning for a newer major, otherwise an OK line
+report_new_groovy_major() {
+  local latest highest version
+  latest="$(latest_groovy_major)"
+  highest="$(highest_major "$GROOVY_INITIAL_MAJORS")"
+  if [[ ! "$latest" =~ ^[0-9]+$ ]]; then
+    log_warn "Could not determine the latest Groovy major on JFrog"
+    return 0
+  fi
+  if (( latest > highest )); then
+    version="$(latest_groovy_version "$latest" || true)"
+    log_warn "New Groovy major available on JFrog: $latest (${version:-unknown}) (configured: $GROOVY_INITIAL_MAJORS). Add it to GROOVY_INITIAL_MAJORS and set GROOVY_JDK_$latest and GROOVY_VERSION_${latest}_PIN in groovy/config.defaults"
+  else
+    log_info "OK: no Groovy major newer than $highest"
+  fi
+}
+
 # Identifies the preceding published Groovy release for rollback operations.
 # Inputs: $1 - Major number, $2 - Current version string
 # Outputs: Echoes previous version string, returns 1 if none found
@@ -353,7 +400,7 @@ update_groovy_major() {
 # Inputs: None
 # Outputs: Prints help text to stdout
 show_setup_help() {
-  cat << 'EOF'
+  cat << EOF
 Usage: setup.sh [options]
 
 Bootstrap Groovy multi-version environment under /opt/groovy and /opt/java.
@@ -362,7 +409,7 @@ Options:
   -h, --help           Show this help and exit
       --skip-jdk       Do not install JDKs via Homebrew
       --skip-download  Skip Groovy archive downloads
-      --major N        Limit install to major version N (3, 4, 5, or 6)
+      --major N        Limit install to major version N (configured: ${GROOVY_INITIAL_MAJORS})
       --verbose        Enable debug logging
 
 Examples:
@@ -382,19 +429,19 @@ EOF
 # Inputs: None
 # Outputs: Prints help text to stdout
 show_java_setup_help() {
-  cat << 'EOF'
+  cat << EOF
 Usage: setup.sh [options]
 
 Bootstrap JDK multi-version environment under /opt/java.
 
 Options:
   -h, --help       Show this help and exit
-      --major N    Limit install to JDK major N (17, 21, 25, or 26)
+      --major N    Limit install to JDK major N (configured: ${JAVA_INITIAL_MAJORS})
       --verbose    Enable debug logging
 
 Examples:
   ./setup.sh
-  ./setup.sh --major 26
+  ./setup.sh --major 27
 
 Related:
   ./verify.sh
@@ -407,14 +454,14 @@ EOF
 # Inputs: None
 # Outputs: Prints help text to stdout
 show_java_verify_help() {
-  cat << 'EOF'
+  cat << EOF
 Usage: verify.sh [options]
 
 Verify JDK installations under /opt/java.
 
 Options:
   -h, --help       Show this help and exit
-      --major N    Limit checks to JDK major N (17, 21, 25, or 26)
+      --major N    Limit checks to JDK major N (configured: ${JAVA_INITIAL_MAJORS})
       --verbose    Enable debug logging
 
 Related:
@@ -427,20 +474,22 @@ EOF
 # Inputs: None
 # Outputs: Prints help text to stdout
 show_update_groovy_help() {
-  cat << 'EOF'
+  cat << EOF
 Usage: update-groovy.sh [major] [options]
        update-groovy.sh --all [options]
+       update-groovy.sh --check
        update-groovy.sh --clean-all
        update-groovy.sh --help
 
 Fetch latest Groovy release(s) from JFrog and install under /opt/groovy.
 
 Arguments:
-  major                Major Groovy version: 3, 4, 5, or 6
+  major                Major Groovy version (configured: ${GROOVY_INITIAL_MAJORS})
 
 Options:
   -h, --help           Show this help and exit
       --all            Update all configured majors
+      --check          Report a newer Groovy major on JFrog and exit
       --clean          Remove superseded installs after update
       --clean-only     Clean one major only (no download); requires major
       --clean-all      Clean all majors only (no download)
@@ -456,6 +505,7 @@ Examples:
   ./update-groovy.sh --all --clean
   ./update-groovy.sh 6 --clean-only
   ./update-groovy.sh --clean-all
+  ./update-groovy.sh --check
 
 Related:
   ./setup.sh --help
@@ -468,33 +518,36 @@ EOF
 # Inputs: None
 # Outputs: Prints help text to stdout
 show_update_java_help() {
-  cat << 'EOF'
-Usage: update-java.sh [17|21|25|26] [options]
+  cat << EOF
+Usage: update-java.sh [${JAVA_INITIAL_MAJORS// /|}] [options]
        update-java.sh --all [options]
+       update-java.sh --check
        update-java.sh --help
 
 Upgrade JDK installations under /opt/java.
 
 Arguments:
-  17|21|25|26         JDK major to upgrade (maps to openjdk-17 / openjdk-21 / openjdk-25 / openjdk-26)
+  ${JAVA_INITIAL_MAJORS// /|}         JDK major to upgrade (maps to ${JAVA_IDS// / \/ })
 
 Options:
   -h, --help           Show this help and exit
       --all            Upgrade all configured JDK majors
+      --check          Report a newer JDK major from the install backend and exit
       --dry-run        Show planned actions only
       --force          Force refresh even if version unchanged
       --verbose        Enable debug logging
 
 Examples:
-  ./update-java.sh 26
+  ./update-java.sh 27
   ./update-java.sh 17
   ./update-java.sh --all
   ./update-java.sh 25 --dry-run
+  ./update-java.sh --check
 
 Related:
   ./setup.sh --help
   ../groovy/setup.sh --help
-  Re-run java17, java21, java25, or java26 after JDK upgrade
+  Re-run java17, java25, or java27 after JDK upgrade
 EOF
 }
 

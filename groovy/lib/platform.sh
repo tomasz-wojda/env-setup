@@ -121,18 +121,31 @@ java_home_for_id() {
   echo "$JAVA_ROOT/$1"
 }
 
+# Reads the JDK major currently shipped by the unversioned Homebrew openjdk formula.
+# Inputs: None
+# Outputs: Echoes the major number, or nothing when brew info fails
+brew_latest_jdk_major() {
+  brew info openjdk 2>/dev/null | sed -nE '1s/^==> openjdk: stable ([0-9]+).*/\1/p' || true
+}
+
 # Maps an internal JDK identifier to the corresponding Homebrew package formula name.
 # Inputs: $1 - JDK identifier (e.g. "openjdk-17")
-# Outputs: Echoes Homebrew formula name
+# Outputs: Echoes Homebrew formula name. Exits when Homebrew has no formula for that major.
 jdk_brew_package() {
   local jdk_id="$1"
-  case "$jdk_id" in
-    openjdk-17) echo "openjdk@17" ;;
-    openjdk-21) echo "openjdk@21" ;;
-    openjdk-25) echo "openjdk@25" ;;
-    openjdk-26) echo "openjdk" ;;
-    *) die_usage "Unknown JDK id: $jdk_id" ;;
-  esac
+  local major="${jdk_id#openjdk-}"
+  local latest name
+  name="$(brew info --formula "openjdk@${major}" 2>/dev/null | sed -nE '1s/^==> ([^:]+):.*/\1/p' || true)"
+  if [[ "$name" == "openjdk@${major}" ]]; then
+    echo "openjdk@${major}"
+    return 0
+  fi
+  latest="$(brew_latest_jdk_major)"
+  if [[ -n "$latest" && "$latest" == "$major" ]]; then
+    echo "openjdk"
+    return 0
+  fi
+  die_install "JDK $major is not available from Homebrew (openjdk is now ${latest:-unknown})"
 }
 
 # Resolves Homebrew installation home directory path for a JDK identifier.
@@ -230,7 +243,7 @@ symlink_jdk_from_brew() {
 }
 
 # Constructs the Adoptium binary download URL for a JDK major version.
-# Inputs: $1 - Major version number (e.g. "17", "21", "25", "26")
+# Inputs: $1 - Major version number (e.g. "17", "21", "25", "27")
 # Outputs: Echoes full download URL
 adoptium_download_url() {
   local major="$1"
@@ -458,6 +471,13 @@ update_jdk() {
       fi
       log_info "Upgrading $pkg..."
       brew update >/dev/null 2>&1 || log_warn "brew update skipped or failed (continuing)"
+      if [[ "$pkg" == "openjdk" ]]; then
+        local latest
+        latest="$(brew_latest_jdk_major)"
+        if [[ "$latest" != "${jdk_id#openjdk-}" ]]; then
+          die_install "Homebrew openjdk is now JDK ${latest:-unknown}; refusing to upgrade $jdk_id across majors. Add ${latest:-the new major} to java/config.defaults and groovy/config.defaults, then run ./update-java.sh ${latest:-<major>}"
+        fi
+      fi
       if brew_jdk_installed "$pkg"; then
         brew upgrade "$pkg" 2>/dev/null || {
           if [[ "$force" != "1" ]]; then
@@ -490,6 +510,39 @@ update_jdk() {
       die_preflight "update_jdk not yet implemented on: $os"
       ;;
   esac
+}
+
+# Resolves the newest JDK major published by the platform install backend.
+# Inputs: None
+# Outputs: Echoes the major number, or nothing when the lookup fails
+latest_available_jdk_major() {
+  case "$(detect_os)" in
+    darwin)
+      brew_latest_jdk_major
+      ;;
+    linux)
+      curl -fsSL --retry 3 --retry-delay 2 "${ADOPTIUM_RELEASES_URL:-https://api.adoptium.net/v3/info/available_releases}" 2>/dev/null \
+        | python3 -c 'import json, sys; print(json.load(sys.stdin)["most_recent_feature_release"])' 2>/dev/null || true
+      ;;
+  esac
+}
+
+# Reports whether a JDK major newer than the configured set is available.
+# Inputs: None (reads JAVA_INITIAL_MAJORS)
+# Outputs: Logs a warning for a newer major, otherwise an OK line
+report_new_jdk_major() {
+  local latest highest
+  latest="$(latest_available_jdk_major)"
+  highest="$(highest_major "$JAVA_INITIAL_MAJORS")"
+  if [[ ! "$latest" =~ ^[0-9]+$ ]]; then
+    log_warn "Could not determine the latest available JDK major"
+    return 0
+  fi
+  if (( latest > highest )); then
+    log_warn "New JDK major available: $latest (configured: $JAVA_INITIAL_MAJORS). Add it to JAVA_IDS and JAVA_INITIAL_MAJORS in java/config.defaults and pair it in groovy/config.defaults"
+  else
+    log_info "OK: no JDK major newer than $highest"
+  fi
 }
 
 # Updates all configured JDK identifiers sequentially.

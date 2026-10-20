@@ -24,20 +24,22 @@ typeset -a _groovy_path_reply
 _ensure_jdk_link() {
   local jdk_id="$1"
   local home="$JAVA_ROOT/$jdk_id"
-  local pkg src
+  local major="${jdk_id#openjdk-}"
+  local pkg src installed
 
   [[ -x "$home/bin/java" && -d "$home/lib" ]] && return 0
-
-  case "$jdk_id" in
-    openjdk-17) pkg="openjdk@17" ;;
-    openjdk-21) pkg="openjdk@21" ;;
-    openjdk-25) pkg="openjdk@25" ;;
-    openjdk-26) pkg="openjdk" ;;
-    *) return 1 ;;
-  esac
+  [[ "$major" == <-> ]] || return 1
 
   command -v brew >/dev/null 2>&1 || return 1
-  brew list "$pkg" >/dev/null 2>&1 || return 1
+  installed="$(brew list --versions "openjdk@${major}" 2>/dev/null)"
+  if [[ "$installed" == "openjdk@${major} "* ]]; then
+    pkg="openjdk@${major}"
+  else
+    installed="$(brew list --versions openjdk 2>/dev/null)"
+    installed="${${installed#openjdk }%%[. ]*}"
+    [[ "$installed" == "$major" ]] || return 1
+    pkg="openjdk"
+  fi
 
   src="$(brew --prefix "$pkg")/libexec/openjdk.jdk/Contents/Home"
   [[ -x "$src/bin/java" && -d "$src/lib" ]] || return 1
@@ -95,12 +97,20 @@ _highest_groovy_major_for_jdk() {
   print -r -- "$result"
 }
 
-# Returns compact version number of active java binary.
+# Returns compact version number and release date of active java binary.
 # Inputs: $1 - Java home path
-# Outputs: Echoes java version string
+# Outputs: Echoes "version (date)", or the version alone when no date is reported
 _java_version_short() {
   local home="$1"
-  "$home/bin/java" -version 2>&1 | head -1 | sed -E 's/.*version "([^"]+)".*/\1/'
+  local line version date
+  line="$("$home/bin/java" -version 2>&1 | head -1)"
+  version="$(print -r -- "$line" | sed -E 's/.*version "([^"]+)".*/\1/')"
+  date="$(print -r -- "$line" | sed -nE 's/.*version "[^"]+" ([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p')"
+  if [[ -n "$date" ]]; then
+    print -r -- "$version ($date)"
+  else
+    print -r -- "$version"
+  fi
 }
 
 # Outputs environment activation summary banner to terminal.
@@ -182,7 +192,7 @@ switchGroovy() {
   _print_env_conjuring "$version"
 }
 
-unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java26 2>/dev/null || true
+unalias groovy3 groovy4 groovy5 groovy6 java17 java25 java27 2>/dev/null || true
 
 groovy3() { switchGroovy "$GROOVY_VERSION_3"; }
 groovy4() { switchGroovy "$GROOVY_VERSION_4"; }
@@ -191,7 +201,7 @@ groovy6() { switchGroovy "$GROOVY_VERSION_6"; }
 
 java17() { switchJava openjdk-17; }
 java25() { switchJava openjdk-25; }
-java26() { switchJava openjdk-26; }
+java27() { switchJava openjdk-27; }
 
 default_var="GROOVY_VERSION_${GROOVY_DEFAULT_MAJOR}"
 switchGroovy ${(P)default_var}
