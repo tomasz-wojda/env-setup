@@ -36,6 +36,9 @@ if [[ "$LIST_ONLY" == "1" ]]; then
   echo "Configured casks: $BREW_CASKS"
   echo "Configured Terraform versions (tfenv): ${BREW_TFENV_VERSIONS:-none}"
   echo "Default Terraform version (tfenv): ${BREW_TFENV_DEFAULT:-unset}"
+  echo "Configured PowerShell version: ${BREW_PWSH_VERSION:-unset}"
+  echo "Configured Pester versions: ${BREW_PESTER_VERSIONS:-none}"
+  echo "Configured PSScriptAnalyzer version: ${BREW_PSSCRIPTANALYZER_VERSION:-unset}"
   exit 0
 fi
 
@@ -66,6 +69,10 @@ fi
 
 if [[ -n "${BREW_TFENV_VERSIONS:-}" ]] && command -v tfenv >/dev/null 2>&1; then
   ensure_tfenv_versions "$FORCE"
+fi
+
+if command -v pwsh >/dev/null 2>&1; then
+  ensure_pwsh_modules
 fi
 
 log_info "Brew setup complete."

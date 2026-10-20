@@ -155,6 +155,48 @@ ensure_cask() {
   log_info "$cask installed"
 }
 
+# Returns success when an exact PowerShell module version is installed.
+# Inputs: $1 - Module name, $2 - Exact version
+# Outputs: None. Returns 0 when Get-InstalledModule finds that version.
+pwsh_module_installed() {
+  local name="$1"
+  local version="$2"
+  pwsh -NoLogo -NoProfile -Command "Get-InstalledModule -Name '${name}' -RequiredVersion '${version}' -ErrorAction Stop" >/dev/null 2>&1
+}
+
+# Installs pinned Pester and PSScriptAnalyzer versions for the current user.
+# Inputs: None
+# Outputs: None. Exits on install failure. Restores PSGallery to Untrusted.
+ensure_pwsh_modules() {
+  local name version lines
+  command -v pwsh >/dev/null 2>&1 || return 0
+  lines=""
+  for version in $BREW_PESTER_VERSIONS; do
+    lines="${lines}Pester ${version}"$'\n'
+  done
+  lines="${lines}PSScriptAnalyzer ${BREW_PSSCRIPTANALYZER_VERSION}"$'\n'
+  while read -r name version; do
+    [[ -n "$name" ]] || continue
+    if pwsh_module_installed "$name" "$version"; then
+      log_info "$name $version already installed"
+      continue
+    fi
+    log_info "Installing $name $version..."
+    pwsh -NoLogo -NoProfile -Command "
+      \$ErrorActionPreference = 'Stop'
+      try {
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Install-Module -Name '${name}' -RequiredVersion '${version}' -Scope CurrentUser -Force
+      } finally {
+        Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted
+      }
+    " || die_install "Install-Module $name $version failed"
+    log_info "$name $version installed"
+  done <<EOF
+$lines
+EOF
+}
+
 # Installs all configured casks defined in BREW_CASKS on macOS.
 # Inputs: $1 - Force reinstall flag (0 or 1)
 # Outputs: None
@@ -389,6 +431,49 @@ print(line.decode("utf-8", "replace"), end="")
   fi
 }
 
+# Verifies pwsh, pinned Gallery modules, and an untrusted PSGallery.
+# Inputs: None
+# Outputs: None. Returns 1 when any PowerShell check fails.
+verify_pwsh_modules() {
+  local failures=0
+  local actual version policy
+  if ! command -v pwsh >/dev/null 2>&1; then
+    log_error "FAIL: pwsh not on PATH"
+    return 1
+  fi
+  actual="$(pwsh -NoLogo -NoProfile -Command '$PSVersionTable.PSVersion.ToString()' | tr -d '[:space:]')"
+  if [[ "$actual" == "$BREW_PWSH_VERSION" ]]; then
+    log_info "OK: pwsh $actual"
+  else
+    log_error "FAIL: pwsh ${actual} (expected ${BREW_PWSH_VERSION})"
+    failures=$((failures + 1))
+  fi
+  for version in $BREW_PESTER_VERSIONS; do
+    if pwsh_module_installed "Pester" "$version"; then
+      log_info "OK: Pester $version installed"
+    else
+      log_error "FAIL: Pester $version not installed"
+      failures=$((failures + 1))
+    fi
+  done
+  if pwsh_module_installed "PSScriptAnalyzer" "$BREW_PSSCRIPTANALYZER_VERSION"; then
+    log_info "OK: PSScriptAnalyzer $BREW_PSSCRIPTANALYZER_VERSION installed"
+  else
+    log_error "FAIL: PSScriptAnalyzer $BREW_PSSCRIPTANALYZER_VERSION not installed"
+    failures=$((failures + 1))
+  fi
+  policy="$(pwsh -NoLogo -NoProfile -Command '(Get-PSRepository -Name PSGallery).InstallationPolicy' | tr -d '[:space:]')"
+  if [[ "$policy" == "Untrusted" ]]; then
+    log_info "OK: PSGallery InstallationPolicy Untrusted"
+  else
+    log_error "FAIL: PSGallery InstallationPolicy ${policy}"
+    failures=$((failures + 1))
+  fi
+  if [[ "$failures" -gt 0 ]]; then
+    return 1
+  fi
+}
+
 # Runs formula and cask verification checks.
 # Inputs: None
 # Outputs: None
@@ -396,6 +481,7 @@ verify_brew_packages() {
   local failures=0
   verify_formulae || failures=$((failures + 1))
   verify_tfenv_versions || failures=$((failures + 1))
+  verify_pwsh_modules || failures=$((failures + 1))
   verify_casks || failures=$((failures + 1))
   if [[ "$failures" -gt 0 ]]; then
     die_validate "$failures brew check group(s) failed"
@@ -433,8 +519,9 @@ show_brew_setup_help() {
   cat << 'EOF'
 Usage: setup.sh [options]
 
-Install configured Homebrew formulae and casks (tree, gh, kubectl, helm, tfenv, python3, argocd, jq, yq, ansible, etc.).
+Install configured Homebrew formulae and casks (tree, gh, kubectl, helm, tfenv, python3, argocd, jq, yq, ansible, powershell, etc.).
 Terraform versions are installed via tfenv (see BREW_TFENV_VERSIONS in config.defaults).
+Pester 5.9.1 and 6.2.0 and PSScriptAnalyzer 1.25.0 are installed for the current user.
 
 Options:
   -h, --help           Show this help and exit
